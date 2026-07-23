@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -32,6 +33,14 @@ class Thread(Base, TimestampMixin):
     """主题帖表，统一管理讨论/问答/文章/资源"""
 
     __tablename__ = "threads"
+    __table_args__ = (
+        # 列表页常用查询：按类型 + 板块筛选
+        Index("ix_threads_type_deleted_category", "type", "is_deleted", "category_id"),
+        # 个人中心常用查询：按类型 + 用户筛选
+        Index("ix_threads_type_deleted_user", "type", "is_deleted", "user_id"),
+        # 板块筛选
+        Index("ix_threads_deleted_category", "is_deleted", "category_id"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255), index=True)

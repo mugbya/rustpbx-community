@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.session import Base
@@ -13,6 +13,10 @@ class Post(Base, TimestampMixin):
     """回复表"""
 
     __tablename__ = "posts"
+    __table_args__ = (
+        # 回复列表常用查询：按帖子 + 未删除 + 楼层排序
+        Index("ix_posts_thread_deleted_floor", "thread_id", "is_deleted", "floor"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     thread_id: Mapped[int] = mapped_column(ForeignKey("threads.id"), index=True)

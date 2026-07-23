@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import desc, func
+from sqlalchemy import case, desc, func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user, get_pagination
@@ -29,12 +29,30 @@ router = APIRouter()
 
 
 def _get_author(db: Session, user_id: int) -> AuthorBrief:
-    """获取作者简要信息"""
+    """获取作者简要信息（单条查询）"""
     user = db.query(User).filter(User.id == user_id).first()
     return AuthorBrief(
         id=user.id,
         username=user.username,
         avatar=user.avatar,
+    )
+
+
+def _batch_authors(db: Session, user_ids: set) -> dict:
+    """批量获取作者信息，避免 N+1 查询"""
+    if not user_ids:
+        return {}
+    users = db.query(User).filter(User.id.in_(user_ids)).all()
+    return {u.id: u for u in users}
+
+
+def _author_from_map(user_map: dict, user_id: int) -> AuthorBrief:
+    """从用户字典中获取作者信息"""
+    u = user_map.get(user_id)
+    return AuthorBrief(
+        id=u.id if u else 0,
+        username=u.username if u else "未知用户",
+        avatar=u.avatar if u else None,
     )
 
 
@@ -81,29 +99,39 @@ def list_categories(db: Session = Depends(get_db)):
         .order_by(Category.sort_order)
         .all()
     )
+
+    # 单次聚合查询所有板块的各类型帖子数，避免 N+1 查询
+    stats = (
+        db.query(
+            Thread.category_id,
+            func.sum(case((Thread.type == ThreadType.DISCUSSION, 1), else_=0)).label("discussion_count"),
+            func.sum(case((Thread.type == ThreadType.QUESTION, 1), else_=0)).label("question_count"),
+            func.sum(case((Thread.type == ThreadType.ARTICLE, 1), else_=0)).label("article_count"),
+            func.sum(case((Thread.type == ThreadType.RESOURCE, 1), else_=0)).label("resource_count"),
+        )
+        .filter(Thread.is_deleted == False)  # noqa: E712
+        .group_by(Thread.category_id)
+        .all()
+    )
+
+    stats_map = {
+        s.category_id: {
+            "discussion_count": int(s.discussion_count or 0),
+            "question_count": int(s.question_count or 0),
+            "article_count": int(s.article_count or 0),
+            "resource_count": int(s.resource_count or 0),
+        }
+        for s in stats
+    }
+
     result = []
     for c in categories:
         item = CategoryResponse.model_validate(c).model_dump()
-        item["discussion_count"] = db.query(Thread).filter(
-            Thread.category_id == c.id,
-            Thread.type == ThreadType.DISCUSSION,
-            Thread.is_deleted == False,  # noqa: E712
-        ).count()
-        item["question_count"] = db.query(Thread).filter(
-            Thread.category_id == c.id,
-            Thread.type == ThreadType.QUESTION,
-            Thread.is_deleted == False,  # noqa: E712
-        ).count()
-        item["article_count"] = db.query(Thread).filter(
-            Thread.category_id == c.id,
-            Thread.type == ThreadType.ARTICLE,
-            Thread.is_deleted == False,  # noqa: E712
-        ).count()
-        item["resource_count"] = db.query(Thread).filter(
-            Thread.category_id == c.id,
-            Thread.type == ThreadType.RESOURCE,
-            Thread.is_deleted == False,  # noqa: E712
-        ).count()
+        s = stats_map.get(c.id, {})
+        item["discussion_count"] = s.get("discussion_count", 0)
+        item["question_count"] = s.get("question_count", 0)
+        item["article_count"] = s.get("article_count", 0)
+        item["resource_count"] = s.get("resource_count", 0)
         result.append(item)
     return ApiResponse(data=result)
 
@@ -175,6 +203,9 @@ def list_threads(
         .all()
     )
 
+    # 批量获取作者信息，避免 N+1 查询
+    user_map = _batch_authors(db, {t.user_id for t in threads})
+
     items = []
     for t in threads:
         items.append(
@@ -183,7 +214,7 @@ def list_threads(
                 title=t.title,
                 type=t.type,
                 category_id=t.category_id,
-                author=_get_author(db, t.user_id),
+                author=_author_from_map(user_map, t.user_id),
                 view_count=t.view_count,
                 reply_count=t.reply_count,
                 like_count=t.like_count,
@@ -432,11 +463,14 @@ def list_posts(
         .all()
     )
 
+    # 批量获取作者信息，避免 N+1 查询
+    post_user_map = _batch_authors(db, {p.user_id for p in posts})
+
     items = [
         PostResponse(
             id=p.id,
             thread_id=p.thread_id,
-            author=_get_author(db, p.user_id),
+            author=_author_from_map(post_user_map, p.user_id),
             content=p.content,
             content_type=p.content_type,
             floor=p.floor,

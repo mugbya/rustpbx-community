@@ -13,7 +13,7 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    echo=settings.DEBUG,
+    echo=False,  # 关闭 SQL 日志，提升性能
 )
 
 # 创建会话工厂

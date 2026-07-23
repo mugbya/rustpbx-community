@@ -88,6 +88,33 @@ def list_categories(db: Session = Depends(get_db)):
     )
 
 
+@router.get("/stats", response_model=ApiResponse)
+def get_forum_stats(db: Session = Depends(get_db)):
+    """获取社区统计数据"""
+    discussion_count = db.query(Thread).filter(
+        Thread.type == ThreadType.DISCUSSION,
+        Thread.is_deleted == False,  # noqa: E712
+    ).count()
+    question_count = db.query(Thread).filter(
+        Thread.type == ThreadType.QUESTION,
+        Thread.is_deleted == False,  # noqa: E712
+    ).count()
+    article_count = db.query(Thread).filter(
+        Thread.type == ThreadType.ARTICLE,
+        Thread.is_deleted == False,  # noqa: E712
+    ).count()
+    user_count = db.query(User).count()
+
+    return ApiResponse(
+        data={
+            "discussion_count": discussion_count,
+            "question_count": question_count,
+            "article_count": article_count,
+            "user_count": user_count,
+        }
+    )
+
+
 # ===== 帖子列表 =====
 
 
@@ -97,6 +124,7 @@ def list_threads(
     thread_type: ThreadType | None = Query(None),
     keyword: str | None = Query(None),
     user_id: int | None = Query(None),
+    sort: str | None = Query(None),
     pagination: dict = Depends(get_pagination),
     db: Session = Depends(get_db),
 ):
@@ -112,10 +140,17 @@ def list_threads(
     if user_id is not None:
         query = query.filter(Thread.user_id == user_id)
 
+    # 排序：views 按浏览量、replies 按回复数、默认按最后回复时间
+    if sort == "views":
+        query = query.order_by(Thread.view_count.desc())
+    elif sort == "replies":
+        query = query.order_by(Thread.reply_count.desc())
+    else:
+        query = query.order_by(Thread.is_pinned.desc(), Thread.last_reply_at.desc())
+
     total = query.count()
     threads = (
-        query.order_by(Thread.is_pinned.desc(), Thread.last_reply_at.desc())
-        .offset(pagination["offset"])
+        query.offset(pagination["offset"])
         .limit(pagination["page_size"])
         .all()
     )

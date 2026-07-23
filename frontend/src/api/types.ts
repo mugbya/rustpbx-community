@@ -115,3 +115,11 @@ export interface UserStats {
   reply_count: number
   like_count: number
 }
+
+// 社区统计数据
+export interface ForumStats {
+  discussion_count: number
+  question_count: number
+  article_count: number
+  user_count: number
+}

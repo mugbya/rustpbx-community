@@ -94,6 +94,9 @@ export default function Profile() {
                 {user.username}
               </Typography.Title>
               <Typography.Text type="secondary">{user.bio || '这个人很懒，什么都没留下'}</Typography.Text>
+              {user.signature && (
+                <Typography.Text italic type="secondary">— {user.signature}</Typography.Text>
+              )}
               <Space split={<span>·</span>}>
                 <span>邮箱：{user.email}</span>
                 <span>加入时间：{dayjs(user.created_at).format('YYYY-MM-DD')}</span>

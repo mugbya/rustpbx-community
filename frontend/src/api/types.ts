@@ -45,6 +45,10 @@ export interface Category {
   sort_order: number
   thread_count: number
   parent_id: number | null
+  discussion_count?: number
+  question_count?: number
+  article_count?: number
+  resource_count?: number
 }
 
 // 帖子类型

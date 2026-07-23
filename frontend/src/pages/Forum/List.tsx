@@ -83,7 +83,7 @@ export default function ForumList() {
                 color={selectedCategory === cat.id ? 'red' : 'default'}
                 onClick={() => handleCategoryClick(cat.id)}
               >
-                {cat.name} ({cat.thread_count})
+                {cat.name} ({cat.discussion_count ?? 0})
               </Tag>
             ))}
           </Space>

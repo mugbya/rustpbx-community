@@ -74,18 +74,38 @@ def _sync_tags(db: Session, thread: Thread, tag_names: list[str]) -> None:
 
 @router.get("/categories", response_model=ApiResponse)
 def list_categories(db: Session = Depends(get_db)):
-    """获取板块列表"""
+    """获取板块列表（含各类型帖子数统计）"""
     categories = (
         db.query(Category)
         .filter(Category.is_active == True)  # noqa: E712
         .order_by(Category.sort_order)
         .all()
     )
-    return ApiResponse(
-        data=[
-            CategoryResponse.model_validate(c).model_dump() for c in categories
-        ]
-    )
+    result = []
+    for c in categories:
+        item = CategoryResponse.model_validate(c).model_dump()
+        item["discussion_count"] = db.query(Thread).filter(
+            Thread.category_id == c.id,
+            Thread.type == ThreadType.DISCUSSION,
+            Thread.is_deleted == False,  # noqa: E712
+        ).count()
+        item["question_count"] = db.query(Thread).filter(
+            Thread.category_id == c.id,
+            Thread.type == ThreadType.QUESTION,
+            Thread.is_deleted == False,  # noqa: E712
+        ).count()
+        item["article_count"] = db.query(Thread).filter(
+            Thread.category_id == c.id,
+            Thread.type == ThreadType.ARTICLE,
+            Thread.is_deleted == False,  # noqa: E712
+        ).count()
+        item["resource_count"] = db.query(Thread).filter(
+            Thread.category_id == c.id,
+            Thread.type == ThreadType.RESOURCE,
+            Thread.is_deleted == False,  # noqa: E712
+        ).count()
+        result.append(item)
+    return ApiResponse(data=result)
 
 
 @router.get("/stats", response_model=ApiResponse)

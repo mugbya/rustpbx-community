@@ -13,6 +13,7 @@ import QAList from '@/pages/QA/List'
 import ArticleList from '@/pages/Article/List'
 import ResourceList from '@/pages/Resource/List'
 import Profile from '@/pages/User/Profile'
+import AdminUsers from '@/pages/Admin/Users'
 import NotFound from '@/pages/NotFound'
 import { useAuthStore } from '@/store/auth'
 
@@ -53,6 +54,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/users',
+        element: (
+          <ProtectedRoute>
+            <AdminUsers />
           </ProtectedRoute>
         ),
       },

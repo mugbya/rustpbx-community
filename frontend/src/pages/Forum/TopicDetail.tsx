@@ -229,7 +229,7 @@ export default function TopicDetail() {
   }
 
   // 判断是否可以删除（作者或管理员）
-  const canDelete = user && (user.id === thread.author.id || user.role === 'admin')
+  const canDelete = user && (user.id === thread.author.id || user.role === 'admin' || user.role === 'moderator')
   // 判断是否可以编辑（仅作者）
   const canEdit = user && user.id === thread.author.id
 
@@ -345,7 +345,7 @@ export default function TopicDetail() {
                 </Button>
               </Popconfirm>
             )}
-            {user?.role === 'admin' && (
+            {(user?.role === 'admin' || user?.role === 'moderator') && (
               <>
                 <Button
                   type="text"

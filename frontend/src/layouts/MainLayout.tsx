@@ -12,6 +12,7 @@ import {
   LogoutOutlined,
   LoginOutlined,
   EditOutlined,
+  TeamOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '@/store/auth'
 import { NAV_MENU_ITEMS, DOCS_URL } from '@/utils/constants'
@@ -32,13 +33,15 @@ export default function MainLayout() {
     '/qa': <QuestionCircleOutlined />,
     '/articles': <FileTextOutlined />,
     '/resources': <CloudDownloadOutlined />,
+    '/admin/users': <TeamOutlined />,
     docs: <BookOutlined />,
   }
 
   // 当前选中菜单项
-  const selectedKey =
-    NAV_MENU_ITEMS.find((item) => item.key !== 'docs' && location.pathname.startsWith(item.key) && item.key !== '/')?.key ??
-    (location.pathname === '/' ? '/' : '')
+  const selectedKey = location.pathname.startsWith('/admin')
+    ? '/admin/users'
+    : NAV_MENU_ITEMS.find((item) => item.key !== 'docs' && location.pathname.startsWith(item.key) && item.key !== '/')?.key ??
+      (location.pathname === '/' ? '/' : '')
 
   // 侧边栏快捷菜单
   const siderMenuItems = [
@@ -47,6 +50,9 @@ export default function MainLayout() {
     { key: '/qa', icon: <QuestionCircleOutlined />, label: '问答' },
     { key: '/articles', icon: <FileTextOutlined />, label: '文章' },
     { key: '/resources', icon: <CloudDownloadOutlined />, label: '资源' },
+    ...(user?.role === 'admin'
+      ? [{ key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' }]
+      : []),
   ]
 
   // 处理菜单点击
@@ -142,11 +148,17 @@ export default function MainLayout() {
           mode="horizontal"
           selectedKeys={selectedKey ? [selectedKey] : []}
           style={{ flex: 1, borderBottom: 'none' }}
-          items={NAV_MENU_ITEMS.map((item) => ({
-            key: item.key,
-            icon: iconMap[item.key],
-            label: item.label,
-          }))}
+          items={[
+            ...NAV_MENU_ITEMS.filter((item) => item.key !== 'docs').map((item) => ({
+              key: item.key,
+              icon: iconMap[item.key],
+              label: item.label,
+            })),
+            ...(user?.role === 'admin'
+              ? [{ key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' }]
+              : []),
+            { key: 'docs', icon: <BookOutlined />, label: '文档' },
+          ]}
           onClick={({ key }) => handleMenuClick(key)}
         />
 

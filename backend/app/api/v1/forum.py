@@ -396,11 +396,11 @@ def toggle_pin(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """置顶/取消置顶（仅管理员）"""
-    if current_user.role != UserRole.ADMIN:
+    """置顶/取消置顶（管理员或版主）"""
+    if current_user.role not in (UserRole.ADMIN, UserRole.MODERATOR):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="仅管理员可操作",
+            detail="仅管理员或版主可操作",
         )
     thread = db.query(Thread).filter(
         Thread.id == thread_id,
@@ -422,11 +422,11 @@ def toggle_essential(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """加精/取消加精（仅管理员）"""
-    if current_user.role != UserRole.ADMIN:
+    """加精/取消加精（管理员或版主）"""
+    if current_user.role not in (UserRole.ADMIN, UserRole.MODERATOR):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="仅管理员可操作",
+            detail="仅管理员或版主可操作",
         )
     thread = db.query(Thread).filter(
         Thread.id == thread_id,

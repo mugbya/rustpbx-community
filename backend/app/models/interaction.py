@@ -12,7 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -36,7 +36,7 @@ class Like(Base):
     target_type: Mapped[TargetType] = mapped_column(Enum(TargetType))
     target_id: Mapped[int] = mapped_column(Integer, index=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now()
+        DateTime, server_default=text("CURRENT_TIMESTAMP")
     )
 
 
@@ -50,7 +50,7 @@ class Favorite(Base):
     target_type: Mapped[TargetType] = mapped_column(Enum(TargetType))
     target_id: Mapped[int] = mapped_column(Integer, index=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now()
+        DateTime, server_default=text("CURRENT_TIMESTAMP")
     )
 
 
@@ -80,5 +80,5 @@ class Notification(Base):
     target_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now()
+        DateTime, server_default=text("CURRENT_TIMESTAMP")
     )

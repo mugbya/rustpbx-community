@@ -1,6 +1,7 @@
 """应用配置管理"""
 
 from typing import List
+from urllib.parse import quote_plus
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,18 +31,20 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """构建数据库连接 URL"""
+        """构建数据库连接 URL，对密码做 URL 编码以支持特殊字符"""
+        pwd = quote_plus(self.MYSQL_PASSWORD)
         return (
-            f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
+            f"mysql+pymysql://{self.MYSQL_USER}:{pwd}"
             f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
             "?charset=utf8mb4"
         )
 
     @property
     def async_database_url(self) -> str:
-        """构建异步数据库连接 URL"""
+        """构建异步数据库连接 URL，对密码做 URL 编码以支持特殊字符"""
+        pwd = quote_plus(self.MYSQL_PASSWORD)
         return (
-            f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
+            f"mysql+aiomysql://{self.MYSQL_USER}:{pwd}"
             f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
             "?charset=utf8mb4"
         )

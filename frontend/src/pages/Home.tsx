@@ -8,33 +8,30 @@ import {
   TeamOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import type { Topic } from '@/api/types'
 
 // 模拟热门话题数据
-const hotTopics: Topic[] = [
+const hotTopics = [
   {
     id: 1,
     title: 'RustPBX 部署实践分享：从零搭建企业级 PBX',
-    author: { id: 1, username: 'rustfan', email: '', avatar: '', nickname: 'Rust爱好者', bio: '', created_at: '' },
-    category: { id: 1, name: '部署实践', description: '', topic_count: 0, post_count: 0 },
+    authorName: 'Rust爱好者',
+    categoryName: '部署实践',
     replies: 32,
     views: 1280,
     created_at: '2025-01-15T10:00:00Z',
-    last_reply_at: '2025-01-16T08:30:00Z',
     is_pinned: true,
-    is_essence: true,
+    is_essential: true,
   },
   {
     id: 2,
     title: '关于 SIP 协议在 RustPBX 中的实现讨论',
-    author: { id: 2, username: 'pbxdev', email: '', avatar: '', nickname: 'PBX开发者', bio: '', created_at: '' },
-    category: { id: 2, name: '技术讨论', description: '', topic_count: 0, post_count: 0 },
+    authorName: 'PBX开发者',
+    categoryName: '技术讨论',
     replies: 18,
     views: 860,
     created_at: '2025-01-14T14:00:00Z',
-    last_reply_at: '2025-01-15T20:00:00Z',
     is_pinned: false,
-    is_essence: false,
+    is_essential: false,
   },
 ]
 
@@ -121,11 +118,11 @@ export default function Home() {
           renderItem={(topic) => (
             <List.Item>
               <List.Item.Meta
-                avatar={<Avatar>{topic.author.nickname?.[0] ?? 'U'}</Avatar>}
+                avatar={<Avatar>{topic.authorName[0]}</Avatar>}
                 title={
                   <Space>
                     {topic.is_pinned && <Tag color="red">置顶</Tag>}
-                    {topic.is_essence && <Tag color="gold">精华</Tag>}
+                    {topic.is_essential && <Tag color="gold">精华</Tag>}
                     <Typography.Link href={`/forum/topic/${topic.id}`}>
                       {topic.title}
                     </Typography.Link>
@@ -133,8 +130,8 @@ export default function Home() {
                 }
                 description={
                   <Space split={<span>·</span>}>
-                    <span>{topic.author.nickname}</span>
-                    <span>{topic.category.name}</span>
+                    <span>{topic.authorName}</span>
+                    <span>{topic.categoryName}</span>
                     <span>{topic.replies} 回复</span>
                     <span>{topic.views} 浏览</span>
                     <span>{dayjs(topic.created_at).format('YYYY-MM-DD')}</span>

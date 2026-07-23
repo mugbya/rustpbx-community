@@ -1,7 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { message } from 'antd'
 import { API_BASE_URL, TOKEN_KEY } from '@/utils/constants'
-import type { ApiResponse } from './types'
 
 // 创建 axios 实例
 const client: AxiosInstance = axios.create({
@@ -29,14 +28,18 @@ client.interceptors.request.use(
 // 响应拦截器：统一处理返回数据和错误
 client.interceptors.response.use(
   (response) => {
-    const res = response.data as ApiResponse
-    // code 为 0 表示成功
-    if (res.code === 0) {
-      return res.data
+    const res = response.data
+    // 如果响应有 code 字段（ApiResponse 格式），检查 code === 0 返回 data
+    if (res && typeof res === 'object' && 'code' in res) {
+      if (res.code === 0) {
+        return res.data
+      }
+      // 业务错误
+      message.error(res.message || '请求失败')
+      return Promise.reject(new Error(res.message || '请求失败'))
     }
-    // 业务错误
-    message.error(res.message || '请求失败')
-    return Promise.reject(new Error(res.message || '请求失败'))
+    // 没有 code 字段（如 PaginatedData），直接返回整个响应数据
+    return res
   },
   (error) => {
     if (error.response) {

@@ -1,72 +1,87 @@
-import { List, Card, Typography, Space, Avatar, Button } from 'antd'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Card, List, Typography, Space, Avatar, Button, Spin, Pagination } from 'antd'
 import { PlusOutlined, EyeOutlined, LikeOutlined, CalendarOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
-import type { Article } from '@/api/types'
+import { forumApi } from '@/api/forum'
+import type { ThreadListItem } from '@/api/types'
 
-// 模拟文章数据
-const articles: Article[] = [
-  {
-    id: 1,
-    title: 'RustPBX 架构设计深度解析',
-    summary: '本文从整体架构出发，深入分析 RustPBX 的模块设计和数据流向...',
-    author: { id: 1, username: 'writer1', email: '', avatar: '', nickname: '架构师', bio: '', created_at: '' },
-    cover: '',
-    views: 890,
-    likes: 56,
-    created_at: '2025-01-15T10:00:00Z',
-  },
-  {
-    id: 2,
-    title: '从零开始搭建企业级 PBX 系统',
-    summary: '手把手教你使用 RustPBX 搭建完整的 PBX 系统，涵盖安装、配置、部署全流程...',
-    author: { id: 2, username: 'writer2', email: '', avatar: '', nickname: '实战派', bio: '', created_at: '' },
-    cover: '',
-    views: 1200,
-    likes: 89,
-    created_at: '2025-01-14T14:00:00Z',
-  },
-]
+const PAGE_SIZE = 20
 
 // 文章列表
 export default function ArticleList() {
+  const navigate = useNavigate()
+  const [items, setItems] = useState<ThreadListItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    forumApi
+      .getThreads({ thread_type: 'article', page, page_size: PAGE_SIZE })
+      .then((data) => {
+        setItems(data.items)
+        setTotal(data.total)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [page])
+
   return (
     <Card
       title="文章"
-      extra={<Button type="primary" icon={<PlusOutlined />}>写文章</Button>}
+      extra={
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/thread/create?type=article')}>
+          写文章
+        </Button>
+      }
     >
-      {articles.length === 0 ? (
-        <EmptyState description="暂无文章" />
-      ) : (
-        <List
-          itemLayout="vertical"
-          dataSource={articles}
-          renderItem={(item) => (
-            <List.Item key={item.id}>
-              <List.Item.Meta
-                avatar={<Avatar size={48}>{item.author.nickname?.[0] ?? 'U'}</Avatar>}
-                title={
-                  <Typography.Title level={4} style={{ margin: 0 }}>
-                    <Typography.Link href={`/articles/${item.id}`}>{item.title}</Typography.Link>
-                  </Typography.Title>
-                }
-                description={
-                  <Space direction="vertical" size={8}>
-                    <Typography.Paragraph ellipsis={{ rows: 2 }} type="secondary">
-                      {item.summary}
-                    </Typography.Paragraph>
-                    <Space split={<span>·</span>}>
-                      <span>{item.author.nickname}</span>
-                      <span><CalendarOutlined /> {dayjs(item.created_at).format('YYYY-MM-DD')}</span>
-                      <span><EyeOutlined /> {item.views}</span>
-                      <span><LikeOutlined /> {item.likes}</span>
-                    </Space>
-                  </Space>
-                }
-              />
-            </List.Item>
-          )}
+      {loading ? (
+        <Spin />
+      ) : items.length === 0 ? (
+        <EmptyState
+          description="暂无文章"
+          actionText="写文章"
+          onAction={() => navigate('/thread/create?type=article')}
         />
+      ) : (
+        <>
+          <List
+            itemLayout="vertical"
+            dataSource={items}
+            renderItem={(item) => (
+              <List.Item key={item.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/forum/topic/${item.id}`)}>
+                <List.Item.Meta
+                  avatar={<Avatar size={48} src={item.author.avatar}>{item.author.username[0]}</Avatar>}
+                  title={
+                    <Typography.Title level={4} style={{ margin: 0 }}>
+                      {item.title}
+                    </Typography.Title>
+                  }
+                  description={
+                    <Space split={<span>·</span>}>
+                      <span>{item.author.username}</span>
+                      <span><CalendarOutlined /> {dayjs(item.created_at).format('YYYY-MM-DD')}</span>
+                      <span><EyeOutlined /> {item.view_count}</span>
+                      <span><LikeOutlined /> {item.like_count}</span>
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+          <div style={{ textAlign: 'right', marginTop: 16 }}>
+            <Pagination
+              current={page}
+              total={total}
+              pageSize={PAGE_SIZE}
+              onChange={setPage}
+              showTotal={(t) => `共 ${t} 条`}
+            />
+          </div>
+        </>
       )}
     </Card>
   )

@@ -7,7 +7,7 @@ export interface ApiResponse<T = unknown> {
 
 // 分页响应数据
 export interface PaginatedData<T> {
-  list: T[]
+  items: T[]
   total: number
   page: number
   page_size: number
@@ -18,73 +18,91 @@ export interface UserInfo {
   id: number
   username: string
   email: string
-  avatar: string
-  nickname: string
-  bio: string
+  avatar: string | null
+  bio: string | null
+  signature: string | null
+  role: string
+  reputation: number
+  is_verified: boolean
   created_at: string
+  last_login_at: string | null
 }
 
-// 登录响应
-export interface LoginResult {
-  token: string
-  user: UserInfo
+// 作者简要信息
+export interface AuthorBrief {
+  id: number
+  username: string
+  avatar: string | null
 }
 
 // 论坛板块
-export interface ForumCategory {
+export interface Category {
   id: number
   name: string
-  description: string
-  topic_count: number
-  post_count: number
+  slug: string
+  description: string | null
+  icon: string | null
+  sort_order: number
+  thread_count: number
+  parent_id: number | null
 }
 
-// 帖子（话题）
-export interface Topic {
+// 帖子类型
+export type ThreadType = 'discussion' | 'question' | 'article' | 'resource'
+
+// 帖子列表项
+export interface ThreadListItem {
   id: number
   title: string
-  author: UserInfo
-  category: ForumCategory
-  replies: number
-  views: number
-  created_at: string
-  last_reply_at: string
+  type: ThreadType
+  category_id: number | null
+  author: AuthorBrief
+  view_count: number
+  reply_count: number
+  like_count: number
+  favorite_count: number
   is_pinned: boolean
-  is_essence: boolean
-}
-
-// 问答
-export interface Question {
-  id: number
-  title: string
-  author: UserInfo
-  tags: string[]
-  answers: number
-  views: number
-  created_at: string
+  is_essential: boolean
   is_solved: boolean
-}
-
-// 文章
-export interface Article {
-  id: number
-  title: string
-  summary: string
-  author: UserInfo
-  cover: string
-  views: number
-  likes: number
   created_at: string
+  last_reply_at: string | null
 }
 
-// 资源
-export interface Resource {
+// 帖子详情
+export interface ThreadDetail {
   id: number
   title: string
-  description: string
-  author: UserInfo
-  type: string
-  download_url: string
-  downloads: number
+  content: string
+  content_type: string
+  type: ThreadType
+  category_id: number | null
+  author: AuthorBrief
+  view_count: number
+  reply_count: number
+  like_count: number
+  favorite_count: number
+  is_pinned: boolean
+  is_essential: boolean
+  is_locked: boolean
+  is_solved: boolean
+  tags: string[]
+  resource_url: string | null
+  resource_type: string | null
+  created_at: string
+  updated_at: string
+  last_reply_at: string | null
+  last_reply_user_id: number | null
+}
+
+// 回复
+export interface Post {
+  id: number
+  thread_id: number
+  author: AuthorBrief
+  content: string
+  content_type: string
+  floor: number
+  parent_id: number | null
+  like_count: number
   created_at: string
 }

@@ -8,6 +8,7 @@ import Register from '@/pages/auth/Register'
 import GitHubCallback from '@/pages/auth/GitHubCallback'
 import ForumList from '@/pages/Forum/List'
 import TopicDetail from '@/pages/Forum/TopicDetail'
+import ThreadCreate from '@/pages/Thread/Create'
 import QAList from '@/pages/QA/List'
 import ArticleList from '@/pages/Article/List'
 import ResourceList from '@/pages/Resource/List'
@@ -34,6 +35,15 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'forum', element: <ForumList /> },
       { path: 'forum/topic/:id', element: <TopicDetail /> },
+      {
+        // 受保护路由：创建帖子需要登录
+        path: 'thread/create',
+        element: (
+          <ProtectedRoute>
+            <ThreadCreate />
+          </ProtectedRoute>
+        ),
+      },
       { path: 'qa', element: <QAList /> },
       { path: 'articles', element: <ArticleList /> },
       { path: 'resources', element: <ResourceList /> },

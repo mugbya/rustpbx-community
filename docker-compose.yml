@@ -31,7 +31,7 @@ services:
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
       - ./backend:/app
     depends_on:

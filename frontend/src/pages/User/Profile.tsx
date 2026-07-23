@@ -52,13 +52,13 @@ export default function Profile() {
         <Row gutter={24} align="middle">
           <Col>
             <Avatar size={80} src={user.avatar} style={{ background: '#ce422b' }}>
-              {user.nickname?.[0] ?? user.username[0]}
+              {user.username[0]}
             </Avatar>
           </Col>
           <Col flex="auto">
             <Space direction="vertical" size={4}>
               <Typography.Title level={4} style={{ margin: 0 }}>
-                {user.nickname || user.username}
+                {user.username}
               </Typography.Title>
               <Typography.Text type="secondary">{user.bio || '这个人很懒，什么都没留下'}</Typography.Text>
               <Space split={<span>·</span>}>

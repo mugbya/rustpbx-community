@@ -11,6 +11,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   LoginOutlined,
+  EditOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '@/store/auth'
 import { NAV_MENU_ITEMS, DOCS_URL } from '@/utils/constants'
@@ -55,6 +56,23 @@ export default function MainLayout() {
     } else {
       navigate(key)
     }
+  }
+
+  // 发帖下拉菜单选项
+  const createMenuItems = [
+    { key: 'discussion', icon: <MessageOutlined />, label: '发讨论帖' },
+    { key: 'question', icon: <QuestionCircleOutlined />, label: '提问题' },
+    { key: 'article', icon: <FileTextOutlined />, label: '写文章' },
+    { key: 'resource', icon: <CloudDownloadOutlined />, label: '传资源' },
+  ]
+
+  // 处理发帖点击：未登录跳转登录页
+  const handleCreate = (key: string) => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    navigate(`/thread/create?type=${key}`)
   }
 
   // 用户下拉菜单
@@ -132,12 +150,25 @@ export default function MainLayout() {
           onClick={({ key }) => handleMenuClick(key)}
         />
 
+        {/* 发帖下拉菜单 */}
+        <Dropdown
+          menu={{
+            items: createMenuItems,
+            onClick: ({ key }) => handleCreate(key),
+          }}
+          placement="bottomRight"
+        >
+          <Button type="primary" icon={<EditOutlined />}>
+            发帖
+          </Button>
+        </Dropdown>
+
         {/* 用户菜单 */}
         {user ? (
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <Space style={{ cursor: 'pointer' }}>
               <Avatar size="small" src={user.avatar} icon={<UserOutlined />} />
-              <span>{user.nickname || user.username}</span>
+              <span>{user.username}</span>
             </Space>
           </Dropdown>
         ) : (

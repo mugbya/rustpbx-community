@@ -96,6 +96,7 @@ def list_threads(
     category_id: int | None = Query(None),
     thread_type: ThreadType | None = Query(None),
     keyword: str | None = Query(None),
+    user_id: int | None = Query(None),
     pagination: dict = Depends(get_pagination),
     db: Session = Depends(get_db),
 ):
@@ -108,6 +109,8 @@ def list_threads(
         query = query.filter(Thread.type == thread_type)
     if keyword:
         query = query.filter(Thread.title.contains(keyword))
+    if user_id is not None:
+        query = query.filter(Thread.user_id == user_id)
 
     total = query.count()
     threads = (

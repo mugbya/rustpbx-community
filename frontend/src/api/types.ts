@@ -106,3 +106,12 @@ export interface Post {
   like_count: number
   created_at: string
 }
+
+// 用户统计数据
+export interface UserStats {
+  discussion_count: number
+  question_count: number
+  article_count: number
+  reply_count: number
+  like_count: number
+}

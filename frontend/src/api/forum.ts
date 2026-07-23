@@ -18,6 +18,7 @@ export const forumApi = {
     category_id?: number
     thread_type?: ThreadType
     keyword?: string
+    user_id?: number
     page?: number
     page_size?: number
   }) => client.get<unknown, PaginatedData<ThreadListItem>>('/v1/forum/threads', { params }),

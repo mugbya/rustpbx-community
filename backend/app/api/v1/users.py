@@ -1,15 +1,59 @@
 """用户 API"""
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user
 from app.db.session import get_db
+from app.models.post import Post
+from app.models.thread import Thread, ThreadType
 from app.models.user import User
 from app.schemas.common import ApiResponse
 from app.schemas.user import UserResponse, UserUpdate
 
 router = APIRouter()
+
+
+@router.get("/{user_id}/stats", response_model=ApiResponse)
+def get_user_stats(user_id: int, db: Session = Depends(get_db)):
+    """获取用户统计数据"""
+    discussion_count = db.query(Thread).filter(
+        Thread.user_id == user_id,
+        Thread.type == ThreadType.DISCUSSION,
+        Thread.is_deleted == False,  # noqa: E712
+    ).count()
+    question_count = db.query(Thread).filter(
+        Thread.user_id == user_id,
+        Thread.type == ThreadType.QUESTION,
+        Thread.is_deleted == False,  # noqa: E712
+    ).count()
+    article_count = db.query(Thread).filter(
+        Thread.user_id == user_id,
+        Thread.type == ThreadType.ARTICLE,
+        Thread.is_deleted == False,  # noqa: E712
+    ).count()
+    reply_count = db.query(Post).filter(
+        Post.user_id == user_id,
+        Post.is_deleted == False,  # noqa: E712
+    ).count()
+
+    # 获赞数 = 帖子获赞 + 回复获赞
+    thread_likes = db.query(func.sum(Thread.like_count)).filter(
+        Thread.user_id == user_id
+    ).scalar() or 0
+    post_likes = db.query(func.sum(Post.like_count)).filter(
+        Post.user_id == user_id
+    ).scalar() or 0
+    total_likes = int(thread_likes) + int(post_likes)
+
+    return ApiResponse(data={
+        "discussion_count": discussion_count,
+        "question_count": question_count,
+        "article_count": article_count,
+        "reply_count": reply_count,
+        "like_count": total_likes,
+    })
 
 
 @router.get("/{user_id}", response_model=ApiResponse)

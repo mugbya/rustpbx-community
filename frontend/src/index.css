@@ -102,3 +102,12 @@ a {
   background: #fafafa;
   font-weight: 600;
 }
+
+/* Markdown 图片限制尺寸 */
+.markdown-body img {
+  max-width: 100%;
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin: 8px 0;
+}

@@ -19,6 +19,20 @@ export default function MarkdownRender({ content }: MarkdownRenderProps) {
               {children}
             </a>
           ),
+          // 图片限制尺寸，防止溢出
+          img: ({ src, alt }) => (
+            <img
+              src={typeof src === 'string' ? src : ''}
+              alt={alt || ''}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '600px',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                margin: '8px 0',
+              }}
+            />
+          ),
         }}
       >
         {content}

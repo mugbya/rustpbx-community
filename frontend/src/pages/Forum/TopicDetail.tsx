@@ -33,7 +33,7 @@ import MarkdownRender from '@/components/MarkdownRender'
 import EmptyState from '@/components/EmptyState'
 import { forumApi, interactionApi } from '@/api/forum'
 import { useAuthStore } from '@/store/auth'
-import type { ThreadDetail, Post } from '@/api/types'
+import type { ThreadDetail, Post, Category } from '@/api/types'
 
 const POST_PAGE_SIZE = 20
 
@@ -64,6 +64,12 @@ export default function TopicDetail() {
   const [replyContent, setReplyContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+
+  // 获取板块列表（用于显示帖子所属板块）
+  useEffect(() => {
+    forumApi.getCategories().then(setCategories).catch(() => {})
+  }, [])
 
   // 获取帖子详情
   useEffect(() => {
@@ -223,6 +229,10 @@ export default function TopicDetail() {
             {thread.is_essential && <Tag color="gold">精华</Tag>}
             {thread.is_solved && <Tag color="success">已解决</Tag>}
             {thread.is_locked && <Tag icon={<LockOutlined />}>已锁定</Tag>}
+            {thread.category_id && (() => {
+              const cat = categories.find((c) => c.id === thread.category_id)
+              return cat ? <Tag color="blue">{cat.name}</Tag> : null
+            })()}
             <span>{dayjs(thread.created_at).format('YYYY-MM-DD HH:mm')}</span>
           </Space>
 

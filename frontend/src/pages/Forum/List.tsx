@@ -16,6 +16,7 @@ export default function ForumList() {
   const [threads, setThreads] = useState<ThreadListItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [loadingCats, setLoadingCats] = useState(false)
   const [loadingThreads, setLoadingThreads] = useState(false)
 
@@ -29,18 +30,29 @@ export default function ForumList() {
       .finally(() => setLoadingCats(false))
   }, [])
 
-  // 获取帖子列表
+  // 获取帖子列表（按选中板块筛选）
   useEffect(() => {
     setLoadingThreads(true)
     forumApi
-      .getThreads({ thread_type: 'discussion', page, page_size: PAGE_SIZE })
+      .getThreads({
+        thread_type: 'discussion',
+        category_id: selectedCategory ?? undefined,
+        page,
+        page_size: PAGE_SIZE,
+      })
       .then((data) => {
         setThreads(data.items)
         setTotal(data.total)
       })
       .catch(() => {})
       .finally(() => setLoadingThreads(false))
-  }, [page])
+  }, [page, selectedCategory])
+
+  // 点击板块：切换筛选
+  const handleCategoryClick = (categoryId: number | null) => {
+    setSelectedCategory(categoryId)
+    setPage(1)
+  }
 
   return (
     <Space direction="vertical" size={24} style={{ width: '100%' }}>
@@ -55,38 +67,31 @@ export default function ForumList() {
       >
         {loadingCats ? (
           <Spin />
-        ) : categories.length === 0 ? (
-          <EmptyState description="暂无板块" />
         ) : (
-          <List
-            grid={{ gutter: 16, column: 2 }}
-            dataSource={categories}
-            renderItem={(category) => (
-              <List.Item>
-                <Card hoverable size="small">
-                  <Card.Meta
-                    avatar={<Avatar style={{ background: '#ce422b' }}>{category.name[0]}</Avatar>}
-                    title={
-                      <span style={{ cursor: 'pointer' }} onClick={() => setPage(1)}>
-                        {category.name}
-                      </span>
-                    }
-                    description={
-                      <Space direction="vertical" size={4}>
-                        <span>{category.description || '暂无描述'}</span>
-                        <Tag>{category.thread_count} 话题</Tag>
-                      </Space>
-                    }
-                  />
-                </Card>
-              </List.Item>
-            )}
-          />
+          <Space wrap size={[8, 8]}>
+            <Tag
+              style={{ cursor: 'pointer', padding: '4px 12px', fontSize: 14 }}
+              color={selectedCategory === null ? 'red' : 'default'}
+              onClick={() => handleCategoryClick(null)}
+            >
+              全部
+            </Tag>
+            {categories.map((cat) => (
+              <Tag
+                key={cat.id}
+                style={{ cursor: 'pointer', padding: '4px 12px', fontSize: 14 }}
+                color={selectedCategory === cat.id ? 'red' : 'default'}
+                onClick={() => handleCategoryClick(cat.id)}
+              >
+                {cat.name} ({cat.thread_count})
+              </Tag>
+            ))}
+          </Space>
         )}
       </Card>
 
-      {/* 最新帖子 */}
-      <Card title="最新帖子">
+      {/* 帖子列表 */}
+      <Card title={selectedCategory ? `${categories.find((c) => c.id === selectedCategory)?.name ?? ''}的帖子` : '最新帖子'}>
         {loadingThreads ? (
           <Spin />
         ) : threads.length === 0 ? (

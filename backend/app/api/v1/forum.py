@@ -328,6 +328,62 @@ def get_thread(thread_id: int, db: Session = Depends(get_db)):
     )
 
 
+# ===== 用户回复列表 =====
+
+
+@router.get("/posts", response_model=ApiResponse)
+def list_user_posts(
+    user_id: int | None = Query(None),
+    pagination: dict = Depends(get_pagination),
+    db: Session = Depends(get_db),
+):
+    """获取回复列表（支持按用户筛选，包含帖子标题）"""
+    query = db.query(Post).filter(Post.is_deleted == False)  # noqa: E712
+    if user_id is not None:
+        query = query.filter(Post.user_id == user_id)
+
+    total = query.count()
+    posts = (
+        query.order_by(Post.created_at.desc())
+        .offset(pagination["offset"])
+        .limit(pagination["page_size"])
+        .all()
+    )
+
+    # 批量获取帖子标题
+    thread_ids = {p.thread_id for p in posts}
+    threads = (
+        db.query(Thread.id, Thread.title).filter(Thread.id.in_(thread_ids)).all()
+    ) if thread_ids else []
+    thread_map = {t.id: t.title for t in threads}
+
+    # 批量获取作者
+    post_user_map = _batch_authors(db, {p.user_id for p in posts})
+
+    items = [
+        {
+            "id": p.id,
+            "thread_id": p.thread_id,
+            "thread_title": thread_map.get(p.thread_id, ""),
+            "author": _author_from_map(post_user_map, p.user_id).model_dump(),
+            "content": p.content,
+            "floor": p.floor,
+            "like_count": p.like_count,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+        }
+        for p in posts
+    ]
+
+    return ApiResponse(
+        data={
+            "items": items,
+            "total": total,
+            "page": pagination["page"],
+            "page_size": pagination["page_size"],
+        }
+    )
+
+
 # ===== 发帖 =====
 
 

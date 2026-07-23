@@ -29,7 +29,7 @@ export default function Profile() {
 
   // Tab 数据
   const [activeTab, setActiveTab] = useState('topics')
-  const [tabDataMap, setTabDataMap] = useState<Record<string, ThreadListItem[]>>({})
+  const [tabDataMap, setTabDataMap] = useState<Record<string, any[]>>({})
   const [tabLoading, setTabLoading] = useState(false)
 
   // 获取统计数据
@@ -44,11 +44,19 @@ export default function Profile() {
   // 获取 Tab 数据
   const fetchTabData = useCallback(
     (tab: string) => {
-      const threadType = tabToThreadType[tab]
-      if (!threadType || !user) return
-      // 已有缓存则不重复请求
+      if (!user) return
       if (tabDataMap[tab]) return
       setTabLoading(true)
+      if (tab === 'replies') {
+        forumApi
+          .getUserPosts({ user_id: user.id, page: 1, page_size: 20 })
+          .then((data) => setTabDataMap((prev) => ({ ...prev, [tab]: data.items })))
+          .catch(() => setTabDataMap((prev) => ({ ...prev, [tab]: [] })))
+          .finally(() => setTabLoading(false))
+        return
+      }
+      const threadType = tabToThreadType[tab]
+      if (!threadType) return
       forumApi
         .getThreads({ user_id: user.id, thread_type: threadType, page: 1, page_size: 20 })
         .then((data) => setTabDataMap((prev) => ({ ...prev, [tab]: data.items })))
@@ -104,9 +112,6 @@ export default function Profile() {
 
   // 渲染 Tab 内容
   const renderTabContent = (tabKey: string) => {
-    if (tabKey === 'replies') {
-      return <EmptyState description="回复列表功能开发中" />
-    }
     const items = tabDataMap[tabKey]
     if (!items && tabLoading) {
       return (
@@ -118,6 +123,34 @@ export default function Profile() {
     if (!items || items.length === 0) {
       return <EmptyState description="暂无内容" />
     }
+    // 回复列表
+    if (tabKey === 'replies') {
+      return (
+        <List
+          itemLayout="horizontal"
+          dataSource={items}
+          renderItem={(item: any) => (
+            <List.Item>
+              <List.Item.Meta
+                title={
+                  <Typography.Link onClick={() => navigate(`/forum/topic/${item.thread_id}`)}>
+                    {item.thread_title}
+                  </Typography.Link>
+                }
+                description={
+                  <Space split={<span>·</span>}>
+                    <span>#{item.floor} 楼</span>
+                    <span><LikeOutlined /> {item.like_count}</span>
+                    <span>{dayjs(item.created_at).format('YYYY-MM-DD HH:mm')}</span>
+                  </Space>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      )
+    }
+    // 帖子列表
     return (
       <List
         itemLayout="horizontal"

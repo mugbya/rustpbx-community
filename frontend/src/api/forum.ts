@@ -16,6 +16,10 @@ export const forumApi = {
   // 获取热门标签列表（可按帖子类型筛选）
   getTags: (thread_type?: ThreadType) => client.get<unknown, { id: number; name: string; usage_count: number }[]>('/v1/forum/tags', { params: { thread_type } }),
 
+  // 获取用户回复列表（包含帖子标题）
+  getUserPosts: (params: { user_id?: number; page?: number; page_size?: number }) =>
+    client.get<unknown, { items: { id: number; thread_id: number; thread_title: string; author: { id: number; username: string; avatar: string | null }; content: string; floor: number; like_count: number; created_at: string }[]; total: number; page: number; page_size: number }>('/v1/forum/posts', { params }),
+
   // 获取帖子列表（支持按板块、类型、关键词、标签筛选和分页）
   getThreads: (params: {
     category_id?: number

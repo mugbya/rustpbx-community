@@ -27,6 +27,8 @@ import {
   DownloadOutlined,
   LockOutlined,
   EditOutlined,
+  PushpinOutlined,
+  TrophyOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import MarkdownRender from '@/components/MarkdownRender'
@@ -180,6 +182,30 @@ export default function TopicDetail() {
     }
   }
 
+  // 置顶/取消置顶
+  const handleTogglePin = async () => {
+    if (!thread) return
+    try {
+      const data = await forumApi.togglePin(thread.id)
+      setThread({ ...thread, is_pinned: data.is_pinned })
+      message.success(data.is_pinned ? '已置顶' : '已取消置顶')
+    } catch {
+      // 错误已由拦截器处理
+    }
+  }
+
+  // 加精/取消加精
+  const handleToggleEssential = async () => {
+    if (!thread) return
+    try {
+      const data = await forumApi.toggleEssential(thread.id)
+      setThread({ ...thread, is_essential: data.is_essential })
+      message.success(data.is_essential ? '已加精' : '已取消加精')
+    } catch {
+      // 错误已由拦截器处理
+    }
+  }
+
   // 加载中
   if (loading) {
     return (
@@ -318,6 +344,26 @@ export default function TopicDetail() {
                   删除
                 </Button>
               </Popconfirm>
+            )}
+            {user?.role === 'admin' && (
+              <>
+                <Button
+                  type="text"
+                  icon={<PushpinOutlined />}
+                  onClick={handleTogglePin}
+                  style={thread.is_pinned ? { color: '#ff4d4f' } : undefined}
+                >
+                  {thread.is_pinned ? '取消置顶' : '置顶'}
+                </Button>
+                <Button
+                  type="text"
+                  icon={<TrophyOutlined />}
+                  onClick={handleToggleEssential}
+                  style={thread.is_essential ? { color: '#faad14' } : undefined}
+                >
+                  {thread.is_essential ? '取消加精' : '加精'}
+                </Button>
+              </>
             )}
           </Space>
         </Space>

@@ -213,6 +213,7 @@ def list_threads(
     keyword: str | None = Query(None),
     user_id: int | None = Query(None),
     tag: str | None = Query(None),
+    is_essential: bool | None = Query(None),
     sort: str | None = Query(None),
     pagination: dict = Depends(get_pagination),
     db: Session = Depends(get_db),
@@ -232,12 +233,14 @@ def list_threads(
         query = query.join(ThreadTag, ThreadTag.thread_id == Thread.id).join(
             Tag, Tag.id == ThreadTag.tag_id
         ).filter(Tag.name == tag)
+    if is_essential is not None:
+        query = query.filter(Thread.is_essential == is_essential)
 
-    # 排序：views 按浏览量、replies 按回复数、默认按最后回复时间
+    # 排序：置顶帖始终在最前
     if sort == "views":
-        query = query.order_by(Thread.view_count.desc())
+        query = query.order_by(Thread.is_pinned.desc(), Thread.view_count.desc())
     elif sort == "replies":
-        query = query.order_by(Thread.reply_count.desc())
+        query = query.order_by(Thread.is_pinned.desc(), Thread.reply_count.desc())
     else:
         query = query.order_by(Thread.is_pinned.desc(), Thread.last_reply_at.desc())
 
@@ -382,6 +385,61 @@ def list_user_posts(
             "page_size": pagination["page_size"],
         }
     )
+
+
+# ===== 管理员操作 =====
+
+
+@router.put("/threads/{thread_id}/pin", response_model=ApiResponse)
+def toggle_pin(
+    thread_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """置顶/取消置顶（仅管理员）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅管理员可操作",
+        )
+    thread = db.query(Thread).filter(
+        Thread.id == thread_id,
+        Thread.is_deleted == False,  # noqa: E712
+    ).first()
+    if not thread:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="帖子不存在",
+        )
+    thread.is_pinned = not thread.is_pinned
+    db.commit()
+    return ApiResponse(data={"is_pinned": thread.is_pinned})
+
+
+@router.put("/threads/{thread_id}/essential", response_model=ApiResponse)
+def toggle_essential(
+    thread_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """加精/取消加精（仅管理员）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅管理员可操作",
+        )
+    thread = db.query(Thread).filter(
+        Thread.id == thread_id,
+        Thread.is_deleted == False,  # noqa: E712
+    ).first()
+    if not thread:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="帖子不存在",
+        )
+    thread.is_essential = not thread.is_essential
+    db.commit()
+    return ApiResponse(data={"is_essential": thread.is_essential})
 
 
 # ===== 发帖 =====

@@ -27,7 +27,7 @@ export default function Home() {
   useEffect(() => {
     Promise.all([
       client.get<unknown, ForumStats>('/v1/forum/stats'),
-      forumApi.getThreads({ sort: 'views', page: 1, page_size: 10 }),
+      forumApi.getThreads({ is_essential: true, sort: 'views', page: 1, page_size: 10 }),
     ])
       .then(([statsData, threadsData]) => {
         setStats(statsData)

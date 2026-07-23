@@ -27,10 +27,17 @@ export const forumApi = {
     keyword?: string
     user_id?: number
     tag?: string
+    is_essential?: boolean
     sort?: string
     page?: number
     page_size?: number
   }) => client.get<unknown, PaginatedData<ThreadListItem>>('/v1/forum/threads', { params }),
+
+  // 置顶/取消置顶（管理员）
+  togglePin: (threadId: number) => client.put<unknown, { is_pinned: boolean }>(`/v1/forum/threads/${threadId}/pin`),
+
+  // 加精/取消加精（管理员）
+  toggleEssential: (threadId: number) => client.put<unknown, { is_essential: boolean }>(`/v1/forum/threads/${threadId}/essential`),
 
   // 获取帖子详情
   getThread: (id: number) => client.get<unknown, ThreadDetail>(`/v1/forum/threads/${id}`),

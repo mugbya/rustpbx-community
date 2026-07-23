@@ -39,6 +39,14 @@ const submitTextMap: Record<ThreadType, string> = {
   resource: '上传资源',
 }
 
+// 根据帖子类型获取列表页路径（提交成功后跳转）
+const listPathMap: Record<ThreadType, string> = {
+  discussion: '/forum',
+  question: '/qa',
+  article: '/articles',
+  resource: '/resources',
+}
+
 // 资源类型选项
 const resourceTypeOptions = [
   { label: '文件', value: 'file' },
@@ -67,6 +75,10 @@ export default function ThreadCreate() {
     ? (typeParam as ThreadType)
     : 'discussion'
 
+  // 编辑模式：从 URL 参数获取帖子 ID
+  const editId = searchParams.get('id')
+  const isEdit = !!editId
+
   // 获取板块分类列表
   useEffect(() => {
     setLoadingCategories(true)
@@ -78,6 +90,28 @@ export default function ThreadCreate() {
       })
       .finally(() => setLoadingCategories(false))
   }, [])
+
+  // 编辑模式：加载帖子详情并填充表单
+  useEffect(() => {
+    if (!editId) return
+    setLoadingCategories(true)
+    forumApi
+      .getThread(Number(editId))
+      .then((data) => {
+        form.setFieldsValue({
+          title: data.title,
+          category_id: data.category_id,
+          tags: data.tags,
+          resource_url: data.resource_url,
+          resource_type: data.resource_type,
+        })
+        setContent(data.content)
+      })
+      .catch(() => {
+        message.error('加载帖子失败')
+      })
+      .finally(() => setLoadingCategories(false))
+  }, [editId])
 
   // 在光标位置插入 Markdown 语法
   const insertMarkdown = (before: string, after = '', placeholder = '') => {
@@ -139,18 +173,30 @@ export default function ThreadCreate() {
     }
     setSubmitting(true)
     try {
-      const thread = await forumApi.createThread({
-        title: values.title,
-        content,
-        content_type: 'markdown',
-        type: threadType,
-        category_id: values.category_id,
-        tags: values.tags || [],
-        resource_url: threadType === 'resource' ? values.resource_url : undefined,
-        resource_type: threadType === 'resource' ? values.resource_type : undefined,
-      })
-      message.success('发布成功')
-      navigate(`/forum/topic/${thread.id}`)
+      if (isEdit && editId) {
+        // 编辑模式：更新帖子
+        await forumApi.updateThread(Number(editId), {
+          title: values.title,
+          content,
+          tags: values.tags || [],
+        })
+        message.success('更新成功')
+      } else {
+        // 创建模式：新建帖子
+        await forumApi.createThread({
+          title: values.title,
+          content,
+          content_type: 'markdown',
+          type: threadType,
+          category_id: values.category_id,
+          tags: values.tags || [],
+          resource_url: threadType === 'resource' ? values.resource_url : undefined,
+          resource_type: threadType === 'resource' ? values.resource_type : undefined,
+        })
+        message.success('发布成功')
+      }
+      // 提交后跳转到对应的列表页
+      navigate(listPathMap[threadType])
     } catch {
       // 错误已由拦截器处理
     } finally {
@@ -169,7 +215,7 @@ export default function ThreadCreate() {
 
   return (
     <Card>
-      <Typography.Title level={3}>{titleMap[threadType]}</Typography.Title>
+      <Typography.Title level={3}>{isEdit ? '编辑' : titleMap[threadType]}</Typography.Title>
       <Divider />
 
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -276,9 +322,9 @@ export default function ThreadCreate() {
         <Form.Item>
           <Space>
             <Button type="primary" htmlType="submit" loading={submitting}>
-              {submitTextMap[threadType]}
+              {isEdit ? '保存修改' : submitTextMap[threadType]}
             </Button>
-            <Button onClick={() => navigate(-1)}>取消</Button>
+            <Button onClick={() => navigate(listPathMap[threadType])}>取消</Button>
           </Space>
         </Form.Item>
       </Form>

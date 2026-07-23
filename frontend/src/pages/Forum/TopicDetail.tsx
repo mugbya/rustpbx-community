@@ -26,6 +26,7 @@ import {
   DeleteOutlined,
   DownloadOutlined,
   LockOutlined,
+  EditOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import MarkdownRender from '@/components/MarkdownRender'
@@ -197,6 +198,8 @@ export default function TopicDetail() {
 
   // 判断是否可以删除（作者或管理员）
   const canDelete = user && (user.id === thread.author.id || user.role === 'admin')
+  // 判断是否可以编辑（仅作者）
+  const canEdit = user && user.id === thread.author.id
 
   return (
     <Space direction="vertical" size={24} style={{ width: '100%' }}>
@@ -282,6 +285,15 @@ export default function TopicDetail() {
             <Button type="text" icon={<EyeOutlined />}>
               浏览 {thread.view_count}
             </Button>
+            {canEdit && (
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => navigate(`/thread/create?type=${thread.type}&id=${thread.id}`)}
+              >
+                编辑
+              </Button>
+            )}
             {canDelete && (
               <Popconfirm
                 title="确定要删除这个帖子吗？"

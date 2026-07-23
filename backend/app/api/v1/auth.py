@@ -24,6 +24,17 @@ from app.schemas.user import UserResponse
 router = APIRouter()
 
 
+@router.get("/github/config", response_model=ApiResponse)
+def github_config():
+    """获取 GitHub OAuth 配置（client_id 是公开信息，前端需要用它跳转 GitHub）"""
+    return ApiResponse(
+        data={
+            "client_id": settings.GITHUB_CLIENT_ID,
+            "redirect_uri": settings.GITHUB_REDIRECT_URI,
+        }
+    )
+
+
 @router.post("/register", response_model=TokenResponse, status_code=201)
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
     """邮箱注册"""

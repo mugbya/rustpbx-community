@@ -3,14 +3,8 @@
 // API 基础路径（通过 vite 代理到后端 8000 端口）
 export const API_BASE_URL = '/api'
 
-// GitHub OAuth 应用 client_id（部署时替换为实际值）
-export const GITHUB_CLIENT_ID = 'YOUR_GITHUB_CLIENT_ID'
-
 // GitHub OAuth 授权地址
 export const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
-
-// GitHub OAuth 回调地址
-export const GITHUB_REDIRECT_URI = `${window.location.origin}/auth/github/callback`
 
 // 文档站地址
 export const DOCS_URL = 'https://docs.rustpbx.cn/'

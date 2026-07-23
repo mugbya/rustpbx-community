@@ -158,7 +158,7 @@ export default function MainLayout() {
           }}
           placement="bottomRight"
         >
-          <Button type="primary" icon={<EditOutlined />}>
+          <Button type="primary" icon={<EditOutlined />} style={{ marginRight: 16 }}>
             发帖
           </Button>
         </Dropdown>

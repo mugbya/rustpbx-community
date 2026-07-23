@@ -5,6 +5,7 @@ import AuthLayout from '@/layouts/AuthLayout'
 import Home from '@/pages/Home'
 import Login from '@/pages/auth/Login'
 import Register from '@/pages/auth/Register'
+import GitHubCallback from '@/pages/auth/GitHubCallback'
 import ForumList from '@/pages/Forum/List'
 import TopicDetail from '@/pages/Forum/TopicDetail'
 import QAList from '@/pages/QA/List'
@@ -59,6 +60,11 @@ const router = createBrowserRouter([
     path: '/register',
     element: <AuthLayout />,
     children: [{ index: true, element: <Register /> }],
+  },
+  {
+    // GitHub OAuth 回调页（独立页面，不需要布局）
+    path: '/auth/github/callback',
+    element: <GitHubCallback />,
   },
 ])
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Form, Input, Button, Divider, Typography, message } from 'antd'
 import { MailOutlined, LockOutlined, UserOutlined, GithubOutlined } from '@ant-design/icons'
-import { GITHUB_CLIENT_ID, GITHUB_AUTHORIZE_URL, GITHUB_REDIRECT_URI } from '@/utils/constants'
+import { GITHUB_AUTHORIZE_URL } from '@/utils/constants'
 
 // 注册页
 export default function Register() {
@@ -31,13 +31,20 @@ export default function Register() {
   }
 
   // GitHub OAuth 注册
-  const handleGitHubLogin = () => {
-    const params = new URLSearchParams({
-      client_id: GITHUB_CLIENT_ID,
-      redirect_uri: GITHUB_REDIRECT_URI,
-      scope: 'read:user user:email',
-    })
-    window.location.href = `${GITHUB_AUTHORIZE_URL}?${params.toString()}`
+  const handleGitHubLogin = async () => {
+    try {
+      const res = await fetch('/api/v1/auth/github/config')
+      const json = await res.json()
+      const { client_id, redirect_uri } = json.data
+      const params = new URLSearchParams({
+        client_id,
+        redirect_uri,
+        scope: 'read:user user:email',
+      })
+      window.location.href = `${GITHUB_AUTHORIZE_URL}?${params.toString()}`
+    } catch {
+      message.error('GitHub 登录配置获取失败')
+    }
   }
 
   return (

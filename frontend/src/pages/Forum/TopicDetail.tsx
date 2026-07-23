@@ -240,7 +240,9 @@ export default function TopicDetail() {
           {thread.tags.length > 0 && (
             <Space>
               {thread.tags.map((tag) => (
-                <Tag key={tag}>{tag}</Tag>
+                <Tag key={tag} style={{ cursor: 'pointer' }} onClick={() => navigate(`/forum?tag=${encodeURIComponent(tag)}`)}>
+                  {tag}
+                </Tag>
               ))}
             </Space>
           )}

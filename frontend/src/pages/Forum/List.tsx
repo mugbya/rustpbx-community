@@ -17,6 +17,8 @@ export default function ForumList() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
+  const [tags, setTags] = useState<{ id: number; name: string; usage_count: number }[]>([])
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [loadingCats, setLoadingCats] = useState(false)
   const [loadingThreads, setLoadingThreads] = useState(false)
 
@@ -30,6 +32,11 @@ export default function ForumList() {
       .finally(() => setLoadingCats(false))
   }, [])
 
+  // 获取热门标签列表
+  useEffect(() => {
+    forumApi.getTags('discussion').then(setTags).catch(() => {})
+  }, [])
+
   // 获取帖子列表（按选中板块筛选）
   useEffect(() => {
     setLoadingThreads(true)
@@ -37,6 +44,7 @@ export default function ForumList() {
       .getThreads({
         thread_type: 'discussion',
         category_id: selectedCategory ?? undefined,
+        tag: selectedTag ?? undefined,
         page,
         page_size: PAGE_SIZE,
       })
@@ -46,11 +54,17 @@ export default function ForumList() {
       })
       .catch(() => {})
       .finally(() => setLoadingThreads(false))
-  }, [page, selectedCategory])
+  }, [page, selectedCategory, selectedTag])
 
   // 点击板块：切换筛选
   const handleCategoryClick = (categoryId: number | null) => {
     setSelectedCategory(categoryId)
+    setPage(1)
+  }
+
+  // 点击标签：切换筛选
+  const handleTagClick = (tagName: string | null) => {
+    setSelectedTag(tagName)
     setPage(1)
   }
 
@@ -89,6 +103,31 @@ export default function ForumList() {
           </Space>
         )}
       </Card>
+
+      {/* 标签筛选 */}
+      {tags.length > 0 && (
+        <Card>
+          <Space wrap size={[8, 8]}>
+            <Tag
+              style={{ cursor: 'pointer', padding: '2px 10px' }}
+              color={selectedTag === null ? 'orange' : 'default'}
+              onClick={() => handleTagClick(null)}
+            >
+              全部标签
+            </Tag>
+            {tags.map((t) => (
+              <Tag
+                key={t.id}
+                style={{ cursor: 'pointer', padding: '2px 10px' }}
+                color={selectedTag === t.name ? 'orange' : 'default'}
+                onClick={() => handleTagClick(t.name)}
+              >
+                {t.name} ({t.usage_count})
+              </Tag>
+            ))}
+          </Space>
+        </Card>
+      )}
 
       {/* 帖子列表 */}
       <Card title={selectedCategory ? `${categories.find((c) => c.id === selectedCategory)?.name ?? ''}的帖子` : '最新帖子'}>

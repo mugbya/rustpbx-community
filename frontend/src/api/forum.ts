@@ -13,12 +13,16 @@ export const forumApi = {
   // 获取板块分类列表
   getCategories: () => client.get<unknown, Category[]>('/v1/forum/categories'),
 
-  // 获取帖子列表（支持按板块、类型、关键词筛选和分页）
+  // 获取热门标签列表（可按帖子类型筛选）
+  getTags: (thread_type?: ThreadType) => client.get<unknown, { id: number; name: string; usage_count: number }[]>('/v1/forum/tags', { params: { thread_type } }),
+
+  // 获取帖子列表（支持按板块、类型、关键词、标签筛选和分页）
   getThreads: (params: {
     category_id?: number
     thread_type?: ThreadType
     keyword?: string
     user_id?: number
+    tag?: string
     sort?: string
     page?: number
     page_size?: number

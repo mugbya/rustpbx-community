@@ -166,12 +166,53 @@ def get_forum_stats(db: Session = Depends(get_db)):
 # ===== 帖子列表 =====
 
 
+@router.get("/tags", response_model=ApiResponse)
+def list_tags(
+    thread_type: ThreadType | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    """获取热门标签列表（可按帖子类型筛选，只返回有该类型帖子的标签）"""
+    if thread_type:
+        tags = (
+            db.query(
+                Tag.id.label("id"),
+                Tag.name.label("name"),
+                func.count(ThreadTag.thread_id).label("usage_count"),
+            )
+            .join(ThreadTag, ThreadTag.tag_id == Tag.id)
+            .join(Thread, Thread.id == ThreadTag.thread_id)
+            .filter(
+                Thread.type == thread_type,
+                Thread.is_deleted == False,  # noqa: E712
+            )
+            .group_by(Tag.id, Tag.name)
+            .order_by(func.count(ThreadTag.thread_id).desc())
+            .limit(20)
+            .all()
+        )
+    else:
+        tags = (
+            db.query(Tag)
+            .filter(Tag.usage_count > 0)
+            .order_by(Tag.usage_count.desc())
+            .limit(20)
+            .all()
+        )
+    return ApiResponse(
+        data=[
+            {"id": t.id, "name": t.name, "usage_count": int(t.usage_count)}
+            for t in tags
+        ]
+    )
+
+
 @router.get("/threads", response_model=PaginatedData[ThreadListItem])
 def list_threads(
     category_id: int | None = Query(None),
     thread_type: ThreadType | None = Query(None),
     keyword: str | None = Query(None),
     user_id: int | None = Query(None),
+    tag: str | None = Query(None),
     sort: str | None = Query(None),
     pagination: dict = Depends(get_pagination),
     db: Session = Depends(get_db),
@@ -187,6 +228,10 @@ def list_threads(
         query = query.filter(Thread.title.contains(keyword))
     if user_id is not None:
         query = query.filter(Thread.user_id == user_id)
+    if tag:
+        query = query.join(ThreadTag, ThreadTag.thread_id == Thread.id).join(
+            Tag, Tag.id == ThreadTag.tag_id
+        ).filter(Tag.name == tag)
 
     # 排序：views 按浏览量、replies 按回复数、默认按最后回复时间
     if sort == "views":

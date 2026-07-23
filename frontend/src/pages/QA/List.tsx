@@ -17,6 +17,8 @@ export default function QAList() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
+  const [tags, setTags] = useState<{ id: number; name: string; usage_count: number }[]>([])
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [loadingCats, setLoadingCats] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -30,6 +32,11 @@ export default function QAList() {
       .finally(() => setLoadingCats(false))
   }, [])
 
+  // 获取热门标签列表
+  useEffect(() => {
+    forumApi.getTags('question').then(setTags).catch(() => {})
+  }, [])
+
   // 获取问答列表（按板块筛选）
   useEffect(() => {
     setLoading(true)
@@ -37,6 +44,7 @@ export default function QAList() {
       .getThreads({
         thread_type: 'question',
         category_id: selectedCategory ?? undefined,
+        tag: selectedTag ?? undefined,
         page,
         page_size: PAGE_SIZE,
       })
@@ -46,10 +54,16 @@ export default function QAList() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [page, selectedCategory])
+  }, [page, selectedCategory, selectedTag])
 
   const handleCategoryClick = (categoryId: number | null) => {
     setSelectedCategory(categoryId)
+    setPage(1)
+  }
+
+  // 点击标签：切换筛选
+  const handleTagClick = (tagName: string | null) => {
+    setSelectedTag(tagName)
     setPage(1)
   }
 
@@ -81,6 +95,31 @@ export default function QAList() {
           </Space>
         )}
       </Card>
+
+      {/* 标签筛选 */}
+      {tags.length > 0 && (
+        <Card>
+          <Space wrap size={[8, 8]}>
+            <Tag
+              style={{ cursor: 'pointer', padding: '2px 10px' }}
+              color={selectedTag === null ? 'orange' : 'default'}
+              onClick={() => handleTagClick(null)}
+            >
+              全部标签
+            </Tag>
+            {tags.map((t) => (
+              <Tag
+                key={t.id}
+                style={{ cursor: 'pointer', padding: '2px 10px' }}
+                color={selectedTag === t.name ? 'orange' : 'default'}
+                onClick={() => handleTagClick(t.name)}
+              >
+                {t.name} ({t.usage_count})
+              </Tag>
+            ))}
+          </Space>
+        </Card>
+      )}
 
       {/* 问答列表 */}
       <Card

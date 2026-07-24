@@ -26,6 +26,14 @@ const threadTypeMap: Record<string, string> = {
   resource: '资源',
 }
 
+// 分区选项（多选用）
+const threadTypeOptions = [
+  { label: '论坛', value: 'discussion' },
+  { label: '问答', value: 'question' },
+  { label: '文章', value: 'article' },
+  { label: '资源', value: 'resource' },
+]
+
 // 管理后台板块类型（扩展 is_active 字段）
 interface AdminCategory extends Category {
   is_active?: boolean
@@ -36,7 +44,7 @@ interface CategoryFormValues {
   name: string
   slug: string
   description?: string
-  thread_type?: string
+  thread_type?: string[]
   sort_order?: number
   is_active?: boolean
 }
@@ -66,18 +74,20 @@ export default function AdminCategories() {
   const handleCreate = () => {
     setEditingCategory(null)
     form.resetFields()
-    form.setFieldsValue({ thread_type: '', sort_order: 0 })
+    form.setFieldsValue({ thread_type: [], sort_order: 0 })
     setModalOpen(true)
   }
 
   // 打开编辑弹窗
   const handleEdit = (record: AdminCategory) => {
     setEditingCategory(record)
+    // 把逗号分隔的字符串转为数组
+    const typeArray = record.thread_type ? record.thread_type.split(',') : []
     form.setFieldsValue({
       name: record.name,
       slug: record.slug,
       description: record.description ?? undefined,
-      thread_type: record.thread_type ?? '',
+      thread_type: typeArray,
       sort_order: record.sort_order,
       is_active: record.is_active ?? true,
     })
@@ -88,8 +98,10 @@ export default function AdminCategories() {
   const handleSave = async () => {
     try {
       const values = await form.validateFields()
-      // 空字符串转换为 undefined，表示全部分区
-      const thread_type = values.thread_type || undefined
+      // 数组转为逗号分隔的字符串，空数组表示全部分区
+      const thread_type = values.thread_type?.length
+        ? values.thread_type.join(',')
+        : undefined
       if (editingCategory) {
         // 编辑板块
         await forumApi.updateCategory(editingCategory.id, {
@@ -137,13 +149,20 @@ export default function AdminCategories() {
     {
       title: '所属分区',
       dataIndex: 'thread_type',
-      width: 120,
-      render: (threadType: string | null) =>
-        threadType ? (
-          <Tag color="blue">{threadTypeMap[threadType] ?? threadType}</Tag>
-        ) : (
-          <Tag color="default">全部分区</Tag>
-        ),
+      width: 200,
+      render: (threadType: string | null) => {
+        if (!threadType) return <Tag color="default">全部分区</Tag>
+        const types = threadType.split(',')
+        return (
+          <Space wrap size={[4, 4]}>
+            {types.map((t) => (
+              <Tag key={t} color="blue">
+                {threadTypeMap[t] ?? t}
+              </Tag>
+            ))}
+          </Space>
+        )
+      },
     },
     {
       title: '描述',
@@ -231,16 +250,15 @@ export default function AdminCategories() {
           <Form.Item name="description" label="描述">
             <Input.TextArea placeholder="请输入描述" rows={3} />
           </Form.Item>
-          <Form.Item name="thread_type" label="所属分区">
+          <Form.Item
+            name="thread_type"
+            label="所属分区（不选则属于全部分区）"
+          >
             <Select
-              placeholder="请选择分区"
-              options={[
-                { label: '全部', value: '' },
-                { label: '论坛', value: 'discussion' },
-                { label: '问答', value: 'question' },
-                { label: '文章', value: 'article' },
-                { label: '资源', value: 'resource' },
-              ]}
+              mode="multiple"
+              placeholder="选择分区（可多选，不选为全部）"
+              options={threadTypeOptions}
+              allowClear
             />
           </Form.Item>
           <Form.Item name="sort_order" label="排序">

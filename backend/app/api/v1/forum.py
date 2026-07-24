@@ -130,9 +130,13 @@ def list_categories(
     """获取板块列表（含各类型帖子数统计，可按分区筛选）"""
     query = db.query(Category).filter(Category.is_active == True)  # noqa: E712
     if thread_type:
-        # 返回属于该分区的板块 + 全局板块（thread_type 为 NULL）
+        # thread_type 存储为逗号分隔的值（如 "discussion,question"），NULL 表示全局
         query = query.filter(
-            or_(Category.thread_type == thread_type, Category.thread_type.is_(None))
+            or_(
+                Category.thread_type.is_(None),
+                Category.thread_type == "",
+                func.find_in_set(thread_type, Category.thread_type) > 0,
+            )
         )
     categories = query.order_by(Category.sort_order).all()
 

@@ -146,6 +146,15 @@ export default function ThreadCreate() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // 前端检查文件大小（5MB）
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      message.error(`图片大小 ${(file.size / 1024 / 1024).toFixed(1)}MB 超过 5MB 限制`)
+      e.target.value = ''
+      return
+    }
+
     setUploading(true)
     try {
       const { url } = await uploadApi.uploadImage(file)

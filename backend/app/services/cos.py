@@ -58,7 +58,12 @@ def upload_file(
         Key=key,
     )
 
-    # 返回访问 URL
+    # 返回访问 URL：优先使用 CDN 域名
+    if settings.CDN_DOMAIN:
+        domain = settings.CDN_DOMAIN
+        if not domain.startswith('http'):
+            domain = f'https://{domain}'
+        return f'{domain}/{key}'
     return f"https://{settings.COS_BUCKET}.cos.{settings.COS_REGION}.myqcloud.com/{key}"
 
 

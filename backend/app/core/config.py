@@ -64,6 +64,8 @@ class Settings(BaseSettings):
     COS_SECRET_KEY: str = ""
     COS_REGION: str = "ap-guangzhou"
     COS_BUCKET: str = ""
+    # CDN 加速域名（配置后上传返回 CDN URL，留空则用 COS 直连）
+    CDN_DOMAIN: str = ""
 
     # CORS 配置
     BACKEND_CORS_ORIGINS: List[str] = [

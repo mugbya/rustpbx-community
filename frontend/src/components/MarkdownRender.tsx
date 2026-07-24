@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { getThumbUrl, getOriginalUrl } from '@/utils/image'
 
 interface MarkdownRenderProps {
   // Markdown 内容
@@ -19,20 +20,32 @@ export default function MarkdownRender({ content }: MarkdownRenderProps) {
               {children}
             </a>
           ),
-          // 图片限制尺寸，防止溢出
-          img: ({ src, alt }) => (
-            <img
-              src={typeof src === 'string' ? src : ''}
-              alt={alt || ''}
-              style={{
-                maxWidth: '100%',
-                maxHeight: '600px',
-                objectFit: 'contain',
-                borderRadius: '8px',
-                margin: '8px 0',
-              }}
-            />
-          ),
+          // 图片：用缩略图显示，点击在新标签页打开原图
+          img: ({ src, alt }) => {
+            const srcUrl = typeof src === 'string' ? src : ''
+            const thumbUrl = getThumbUrl(srcUrl, 'medium')
+            return (
+              <a
+                href={getOriginalUrl(srcUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src={thumbUrl}
+                  alt={alt || ''}
+                  loading="lazy"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '600px',
+                    objectFit: 'contain',
+                    borderRadius: '8px',
+                    margin: '8px 0',
+                    cursor: 'zoom-in',
+                  }}
+                />
+              </a>
+            )
+          },
         }}
       >
         {content}

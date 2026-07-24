@@ -87,6 +87,22 @@ def _sync_tags(db: Session, thread: Thread, tag_names: list[str]) -> None:
         db.add(ThreadTag(thread_id=thread.id, tag_id=tag.id))
 
 
+# ===== 公开配置 =====
+
+
+@router.get("/config", response_model=ApiResponse)
+def get_public_config():
+    """获取公开配置（CDN 域名等）"""
+    cos_domain = f"{settings.COS_BUCKET}.cos.{settings.COS_REGION}.myqcloud.com"
+    cdn_domain = settings.CDN_DOMAIN
+    if cdn_domain and not cdn_domain.startswith('http'):
+        cdn_domain = f'https://{cdn_domain}'
+    return ApiResponse(data={
+        "cdn_domain": cdn_domain or None,
+        "cos_domain": cos_domain,
+    })
+
+
 # ===== 板块 =====
 
 

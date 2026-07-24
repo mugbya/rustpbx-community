@@ -7,6 +7,7 @@ import {
   QuestionCircleOutlined,
   FileTextOutlined,
   CloudDownloadOutlined,
+  BugOutlined,
   BookOutlined,
   UserOutlined,
   LogoutOutlined,
@@ -33,6 +34,7 @@ export default function MainLayout() {
     '/qa': <QuestionCircleOutlined />,
     '/articles': <FileTextOutlined />,
     '/resources': <CloudDownloadOutlined />,
+    '/community': <BugOutlined />,
     '/admin/users': <TeamOutlined />,
     docs: <BookOutlined />,
   }
@@ -50,6 +52,7 @@ export default function MainLayout() {
     { key: '/qa', icon: <QuestionCircleOutlined />, label: '问答' },
     { key: '/articles', icon: <FileTextOutlined />, label: '文章' },
     { key: '/resources', icon: <CloudDownloadOutlined />, label: '资源' },
+    { key: '/community', icon: <BugOutlined />, label: '社区建设' },
     ...(user?.role === 'admin'
       ? [{ key: '/admin', icon: <TeamOutlined />, label: '管理后台' }]
       : []),

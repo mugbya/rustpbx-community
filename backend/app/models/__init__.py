@@ -2,6 +2,7 @@
 
 from app.models.category import Category
 from app.models.category_moderator import CategoryModerator
+from app.models.community_post import CommunityPost, CommunityReply
 from app.models.interaction import (
     Favorite,
     Like,
@@ -17,6 +18,8 @@ from app.models.user import User, UserRole
 __all__ = [
     "Category",
     "CategoryModerator",
+    "CommunityPost",
+    "CommunityReply",
     "Favorite",
     "Like",
     "Notification",

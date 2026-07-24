@@ -21,9 +21,9 @@ from app.models.base import TimestampMixin
 
 
 class TopicType(str, enum.Enum):
-    """帖子类型"""
+    """帖子类型（分区）"""
 
-    DISCUSSION = "discussion"  # 讨论
+    DISCUSSION = "discussion"  # 论坛
     QUESTION = "question"      # 问答
     ARTICLE = "article"        # 文章
     RESOURCE = "resource"      # 资源
@@ -47,7 +47,8 @@ class Topic(Base, TimestampMixin):
     content: Mapped[str] = mapped_column(Text(length=16777215))  # MEDIUMTEXT
     content_type: Mapped[str] = mapped_column(String(20), default="markdown")
     type: Mapped[TopicType] = mapped_column(
-        Enum(TopicType), default=TopicType.DISCUSSION, index=True
+        Enum(TopicType, values_callable=lambda e: [v.value for v in e]),
+        default=TopicType.DISCUSSION, index=True
     )
 
     # 关联

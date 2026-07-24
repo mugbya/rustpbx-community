@@ -19,5 +19,6 @@ export const NAV_MENU_ITEMS = [
   { key: '/qa', label: '问答' },
   { key: '/articles', label: '文章' },
   { key: '/resources', label: '资源' },
+  { key: '/community', label: '社区建设' },
   { key: 'docs', label: '文档', external: DOCS_URL },
 ] as const

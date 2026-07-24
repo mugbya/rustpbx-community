@@ -12,6 +12,9 @@ import TopicCreate from '@/pages/Topic/Create'
 import QAList from '@/pages/QA/List'
 import ArticleList from '@/pages/Article/List'
 import ResourceList from '@/pages/Resource/List'
+import CommunityList from '@/pages/Community/List'
+import CommunityDetail from '@/pages/Community/Detail'
+import CommunityCreate from '@/pages/Community/Create'
 import Profile from '@/pages/User/Profile'
 import AdminUsers from '@/pages/Admin/Users'
 import NotFound from '@/pages/NotFound'
@@ -48,6 +51,17 @@ const router = createBrowserRouter([
       { path: 'qa', element: <QAList /> },
       { path: 'articles', element: <ArticleList /> },
       { path: 'resources', element: <ResourceList /> },
+      { path: 'community', element: <CommunityList /> },
+      { path: 'community/detail/:id', element: <CommunityDetail /> },
+      {
+        // 受保护路由：社区发帖需要登录
+        path: 'community/create',
+        element: (
+          <ProtectedRoute>
+            <CommunityCreate />
+          </ProtectedRoute>
+        ),
+      },
       {
         // 受保护路由：个人中心需要登录
         path: 'user/profile',

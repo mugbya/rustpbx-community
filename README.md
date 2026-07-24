@@ -124,7 +124,9 @@ npm run dev
 
 ## 数据库表结构
 
-共 10 张表，核心设计是 `topics` 一张表统一管理 4 种内容类型（讨论/问答/文章/资源），通过 `type` 字段区分。
+共 12 张表。核心设计：
+- `topics` 表统一管理 4 种内容类型（论坛/问答/文章/资源），通过 `type` 字段区分
+- `community_posts` + `community_replies` 独立管理社区建设（不共用 topics）
 
 ### 概念说明
 
@@ -139,16 +141,18 @@ npm run dev
 
 | 表名 | 用途 | 关键字段 |
 |------|------|----------|
-| `users` | 用户账号 | email, username, password_hash, role(user/moderator/admin), reputation, github_id |
-| `categories` | 板块分类（综合讨论、安装部署、SIP配置等） | name, slug, description, topic_type(所属分区), sort_order, is_active |
-| `topics` | 主题帖（统一存储讨论/问答/文章/资源） | title, content, type(discussion/question/article/resource), category_id, user_id, view_count, reply_count, like_count, is_pinned, is_essential, is_locked, is_solved, is_deleted |
-| `posts` | 回复/评论 | topic_id, user_id, content, floor, parent_id（楼中楼）, like_count, is_deleted |
-| `tags` | 标签 | name, slug, usage_count |
-| `topic_tags` | 帖子-标签多对多关联 | topic_id, tag_id |
+| `users` | 用户账号 | email, username, password_hash, role(USER/MODERATOR/ADMIN), reputation, github_id, is_active, is_verified |
+| `categories` | 板块分类（综合讨论、安装部署等） | name, slug, description, topic_type(所属分区，逗号分隔), sort_order, is_active |
 | `category_moderators` | 板块版主关联 | category_id, user_id |
+| `topics` | 主题帖（论坛/问答/文章/资源） | title, content, type(discussion/question/article/resource), category_id, user_id, view_count, reply_count, like_count, is_pinned, is_essential, is_locked, is_solved, accepted_answer_id, resource_url, resource_type, is_deleted |
+| `posts` | 回复/评论（topics 的回复） | topic_id, user_id, content, floor, parent_id（楼中楼）, like_count, is_deleted |
+| `topic_tags` | 帖子-标签多对多关联 | topic_id, tag_id |
+| `tags` | 标签 | name, slug, usage_count |
+| `community_posts` | 社区建设帖子（独立于 topics） | title, content, user_id, view_count, reply_count, like_count, is_deleted, last_reply_at, last_reply_user_id |
+| `community_replies` | 社区建设回复 | post_id, user_id, content, parent_id（楼中楼）, floor, like_count, is_deleted |
 | `likes` | 点赞记录 | user_id, target_type(topic/post), target_id |
 | `favorites` | 收藏记录 | user_id, target_type(topic/post), target_id |
-| `notifications` | 站内通知 | user_id, type(reply/like/favorite/mention/system), from_user_id, is_read |
+| `notifications` | 站内通知 | user_id, type(REPLY/LIKE/FAVORITE/MENTION/SYSTEM), from_user_id, content, target_type, target_id, is_read |
 
 ### 表关系
 
@@ -156,6 +160,7 @@ npm run dev
 users ─┬─< topics ──┬─< posts（回复）
        │            ├─< topic_tags >─ tags
        │            └─< likes / favorites
+       ├─< community_posts ──< community_replies（回复）
        ├─< likes（点赞）
        ├─< favorites（收藏）
        ├─< notifications（通知）

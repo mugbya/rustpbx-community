@@ -39,7 +39,7 @@ export default function MainLayout() {
 
   // 当前选中菜单项
   const selectedKey = location.pathname.startsWith('/admin')
-    ? '/admin/users'
+    ? '/admin'
     : NAV_MENU_ITEMS.find((item) => item.key !== 'docs' && location.pathname.startsWith(item.key) && item.key !== '/')?.key ??
       (location.pathname === '/' ? '/' : '')
 
@@ -51,7 +51,7 @@ export default function MainLayout() {
     { key: '/articles', icon: <FileTextOutlined />, label: '文章' },
     { key: '/resources', icon: <CloudDownloadOutlined />, label: '资源' },
     ...(user?.role === 'admin'
-      ? [{ key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' }]
+      ? [{ key: '/admin', icon: <TeamOutlined />, label: '管理后台' }]
       : []),
   ]
 
@@ -155,7 +155,7 @@ export default function MainLayout() {
               label: item.label,
             })),
             ...(user?.role === 'admin'
-              ? [{ key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' }]
+              ? [{ key: '/admin', icon: <TeamOutlined />, label: '管理后台' }]
               : []),
             { key: 'docs', icon: <BookOutlined />, label: '文档' },
           ]}

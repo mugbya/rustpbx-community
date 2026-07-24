@@ -43,6 +43,7 @@ export interface Category {
   description: string | null
   icon: string | null
   sort_order: number
+  thread_type: string | null
   thread_count: number
   parent_id: number | null
   discussion_count?: number
@@ -96,6 +97,7 @@ export interface ThreadDetail {
   updated_at: string
   last_reply_at: string | null
   last_reply_user_id: number | null
+  can_moderate?: boolean
 }
 
 // 回复

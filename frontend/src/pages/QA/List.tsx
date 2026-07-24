@@ -26,7 +26,7 @@ export default function QAList() {
   useEffect(() => {
     setLoadingCats(true)
     forumApi
-      .getCategories()
+      .getCategories('question')
       .then((data) => setCategories(data))
       .catch(() => {})
       .finally(() => setLoadingCats(false))

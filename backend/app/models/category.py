@@ -20,6 +20,10 @@ class Category(Base, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     icon: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    # 所属分区：discussion / question / article / resource
+    thread_type: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True, index=True
+    )
     # 支持子板块
     parent_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("categories.id"), nullable=True

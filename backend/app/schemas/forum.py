@@ -19,6 +19,7 @@ class CategoryResponse(BaseModel):
     description: Optional[str] = None
     icon: Optional[str] = None
     sort_order: int
+    thread_type: Optional[str] = None
     thread_count: int
     parent_id: Optional[int] = None
 

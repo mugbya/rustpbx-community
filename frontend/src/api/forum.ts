@@ -10,8 +10,19 @@ import type {
 
 // 论坛相关 API
 export const forumApi = {
-  // 获取板块分类列表
-  getCategories: () => client.get<unknown, Category[]>('/v1/forum/categories'),
+  // 获取板块分类列表（可按分区筛选）
+  getCategories: (thread_type?: string) => client.get<unknown, Category[]>('/v1/forum/categories', { params: { thread_type } }),
+
+  // 创建板块（管理员）
+  createCategory: (data: { name: string; slug: string; description?: string; thread_type?: string; sort_order?: number }) =>
+    client.post<unknown, Category>('/v1/forum/categories', data),
+
+  // 编辑板块（管理员）
+  updateCategory: (id: number, data: { name?: string; description?: string; thread_type?: string; sort_order?: number; is_active?: boolean }) =>
+    client.put<unknown, Category>(`/v1/forum/categories/${id}`, data),
+
+  // 删除板块（管理员）
+  deleteCategory: (id: number) => client.delete<unknown, { deleted: boolean }>(`/v1/forum/categories/${id}`),
 
   // 获取热门标签列表（可按帖子类型筛选）
   getTags: (thread_type?: ThreadType) => client.get<unknown, { id: number; name: string; usage_count: number }[]>('/v1/forum/tags', { params: { thread_type } }),
@@ -33,11 +44,20 @@ export const forumApi = {
     page_size?: number
   }) => client.get<unknown, PaginatedData<ThreadListItem>>('/v1/forum/threads', { params }),
 
-  // 置顶/取消置顶（管理员）
+  // 置顶/取消置顶（管理员或板块版主）
   togglePin: (threadId: number) => client.put<unknown, { is_pinned: boolean }>(`/v1/forum/threads/${threadId}/pin`),
 
-  // 加精/取消加精（管理员）
+  // 加精/取消加精（管理员或板块版主）
   toggleEssential: (threadId: number) => client.put<unknown, { is_essential: boolean }>(`/v1/forum/threads/${threadId}/essential`),
+
+  // 获取板块版主列表
+  getModerators: (categoryId: number) => client.get<unknown, { id: number; user_id: number; username: string; avatar: string | null; email: string }[]>(`/v1/forum/categories/${categoryId}/moderators`),
+
+  // 分配板块版主
+  addModerator: (categoryId: number, userId: number) => client.post<unknown, { id: number; user_id: number; username: string }>(`/v1/forum/categories/${categoryId}/moderators`, null, { params: { user_id: userId } }),
+
+  // 取消板块版主
+  removeModerator: (categoryId: number, userId: number) => client.delete<unknown, { removed: boolean }>(`/v1/forum/categories/${categoryId}/moderators/${userId}`),
 
   // 获取帖子详情
   getThread: (id: number) => client.get<unknown, ThreadDetail>(`/v1/forum/threads/${id}`),

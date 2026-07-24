@@ -26,7 +26,7 @@ export default function ArticleList() {
   useEffect(() => {
     setLoadingCats(true)
     forumApi
-      .getCategories()
+      .getCategories('article')
       .then((data) => setCategories(data))
       .catch(() => {})
       .finally(() => setLoadingCats(false))

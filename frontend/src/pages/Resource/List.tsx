@@ -26,7 +26,7 @@ export default function ResourceList() {
   useEffect(() => {
     setLoadingCats(true)
     forumApi
-      .getCategories()
+      .getCategories('resource')
       .then((data) => setCategories(data))
       .catch(() => {})
       .finally(() => setLoadingCats(false))

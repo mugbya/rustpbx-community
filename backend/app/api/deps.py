@@ -52,6 +52,22 @@ def get_current_user(
     return user
 
 
+def get_optional_user(
+    db: Session = Depends(get_db),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> Optional[User]:
+    """获取当前登录用户（可选，未登录返回 None）"""
+    if credentials is None:
+        return None
+    user_id = decode_access_token(credentials.credentials)
+    if user_id is None:
+        return None
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None or not user.is_active:
+        return None
+    return user
+
+
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:

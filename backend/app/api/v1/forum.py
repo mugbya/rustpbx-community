@@ -3,13 +3,15 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import case, desc, func
+from pydantic import BaseModel
+from sqlalchemy import case, desc, func, or_
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_active_user, get_pagination
+from app.api.deps import get_current_active_user, get_optional_user, get_pagination
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.category import Category
+from app.models.category_moderator import CategoryModerator
 from app.models.post import Post
 from app.models.tag import Tag, ThreadTag
 from app.models.thread import Thread, ThreadType
@@ -54,6 +56,19 @@ def _author_from_map(user_map: dict, user_id: int) -> AuthorBrief:
         id=u.id if u else 0,
         username=u.username if u else "未知用户",
         avatar=u.avatar if u else None,
+    )
+
+
+def _is_category_moderator(db: Session, user_id: int, category_id: int) -> bool:
+    """检查用户是否是指定板块的版主"""
+    return (
+        db.query(CategoryModerator)
+        .filter(
+            CategoryModerator.category_id == category_id,
+            CategoryModerator.user_id == user_id,
+        )
+        .first()
+        is not None
     )
 
 
@@ -108,14 +123,18 @@ def get_public_config():
 
 
 @router.get("/categories", response_model=ApiResponse)
-def list_categories(db: Session = Depends(get_db)):
-    """获取板块列表（含各类型帖子数统计）"""
-    categories = (
-        db.query(Category)
-        .filter(Category.is_active == True)  # noqa: E712
-        .order_by(Category.sort_order)
-        .all()
-    )
+def list_categories(
+    thread_type: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    """获取板块列表（含各类型帖子数统计，可按分区筛选）"""
+    query = db.query(Category).filter(Category.is_active == True)  # noqa: E712
+    if thread_type:
+        # 返回属于该分区的板块 + 全局板块（thread_type 为 NULL）
+        query = query.filter(
+            or_(Category.thread_type == thread_type, Category.thread_type.is_(None))
+        )
+    categories = query.order_by(Category.sort_order).all()
 
     # 单次聚合查询所有板块的各类型帖子数，避免 N+1 查询
     stats = (
@@ -304,7 +323,11 @@ def list_threads(
 
 
 @router.get("/threads/{thread_id}", response_model=ApiResponse)
-def get_thread(thread_id: int, db: Session = Depends(get_db)):
+def get_thread(
+    thread_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_optional_user),
+):
     """获取帖子详情"""
     thread = db.query(Thread).filter(
         Thread.id == thread_id,
@@ -320,32 +343,38 @@ def get_thread(thread_id: int, db: Session = Depends(get_db)):
     thread.view_count += 1
     db.commit()
 
-    return ApiResponse(
-        data=ThreadDetail(
-            id=thread.id,
-            title=thread.title,
-            content=thread.content,
-            content_type=thread.content_type,
-            type=thread.type,
-            category_id=thread.category_id,
-            author=_get_author(db, thread.user_id),
-            view_count=thread.view_count,
-            reply_count=thread.reply_count,
-            like_count=thread.like_count,
-            favorite_count=thread.favorite_count,
-            is_pinned=thread.is_pinned,
-            is_essential=thread.is_essential,
-            is_locked=thread.is_locked,
-            is_solved=thread.is_solved,
-            tags=_get_tags(db, thread.id),
-            resource_url=thread.resource_url,
-            resource_type=thread.resource_type,
-            created_at=thread.created_at,
-            updated_at=thread.updated_at,
-            last_reply_at=thread.last_reply_at,
-            last_reply_user_id=thread.last_reply_user_id,
-        ).model_dump()
+    data = ThreadDetail(
+        id=thread.id,
+        title=thread.title,
+        content=thread.content,
+        content_type=thread.content_type,
+        type=thread.type,
+        category_id=thread.category_id,
+        author=_get_author(db, thread.user_id),
+        view_count=thread.view_count,
+        reply_count=thread.reply_count,
+        like_count=thread.like_count,
+        favorite_count=thread.favorite_count,
+        is_pinned=thread.is_pinned,
+        is_essential=thread.is_essential,
+        is_locked=thread.is_locked,
+        is_solved=thread.is_solved,
+        tags=_get_tags(db, thread.id),
+        resource_url=thread.resource_url,
+        resource_type=thread.resource_type,
+        created_at=thread.created_at,
+        updated_at=thread.updated_at,
+        last_reply_at=thread.last_reply_at,
+        last_reply_user_id=thread.last_reply_user_id,
+    ).model_dump()
+
+    # 当前用户是否可以管理该帖子（管理员或该板块版主）
+    data["can_moderate"] = current_user is not None and (
+        current_user.role == UserRole.ADMIN
+        or _is_category_moderator(db, current_user.id, thread.category_id)
     )
+
+    return ApiResponse(data=data)
 
 
 # ===== 用户回复列表 =====
@@ -404,7 +433,200 @@ def list_user_posts(
     )
 
 
-# ===== 管理员操作 =====
+# ===== 板块管理（管理员） =====
+
+
+class CategoryCreateRequest(BaseModel):
+    name: str
+    slug: str
+    description: str | None = None
+    thread_type: str | None = None
+    sort_order: int = 0
+
+
+class CategoryUpdateRequest(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    thread_type: str | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
+
+
+@router.post("/categories", response_model=ApiResponse, status_code=201)
+def create_category(
+    request: CategoryCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """创建板块（仅管理员）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅管理员可操作")
+    # 检查 slug 唯一性
+    if db.query(Category).filter(Category.slug == request.slug).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="slug 已存在")
+    category = Category(
+        name=request.name,
+        slug=request.slug,
+        description=request.description,
+        thread_type=request.thread_type,
+        sort_order=request.sort_order,
+    )
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return ApiResponse(data=CategoryResponse.model_validate(category).model_dump())
+
+
+@router.put("/categories/{category_id}", response_model=ApiResponse)
+def update_category(
+    category_id: int,
+    request: CategoryUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """编辑板块（仅管理员）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅管理员可操作")
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="板块不存在")
+    if request.name is not None:
+        category.name = request.name
+    if request.description is not None:
+        category.description = request.description
+    if request.thread_type is not None:
+        category.thread_type = request.thread_type
+    if request.sort_order is not None:
+        category.sort_order = request.sort_order
+    if request.is_active is not None:
+        category.is_active = request.is_active
+    db.commit()
+    db.refresh(category)
+    return ApiResponse(data=CategoryResponse.model_validate(category).model_dump())
+
+
+@router.delete("/categories/{category_id}", response_model=ApiResponse)
+def delete_category(
+    category_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """删除板块（仅管理员，软删除）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅管理员可操作")
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="板块不存在")
+    category.is_active = False
+    db.commit()
+    return ApiResponse(data={"deleted": True})
+
+
+# ===== 板块版主管理 =====
+
+
+@router.get("/categories/{category_id}/moderators", response_model=ApiResponse)
+def list_moderators(
+    category_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """获取板块版主列表（仅管理员）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅管理员可操作",
+        )
+    moderators = (
+        db.query(CategoryModerator, User)
+        .join(User, User.id == CategoryModerator.user_id)
+        .filter(CategoryModerator.category_id == category_id)
+        .all()
+    )
+    return ApiResponse(
+        data=[
+            {
+                "id": cm.id,
+                "user_id": u.id,
+                "username": u.username,
+                "avatar": u.avatar,
+                "email": u.email,
+            }
+            for cm, u in moderators
+        ]
+    )
+
+
+@router.post(
+    "/categories/{category_id}/moderators",
+    response_model=ApiResponse,
+    status_code=201,
+)
+def add_moderator(
+    category_id: int,
+    user_id: int = Query(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """分配板块版主（仅管理员）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅管理员可操作",
+        )
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="板块不存在")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    existing = (
+        db.query(CategoryModerator)
+        .filter(
+            CategoryModerator.category_id == category_id,
+            CategoryModerator.user_id == user_id,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该用户已是此板块版主")
+    cm = CategoryModerator(category_id=category_id, user_id=user_id)
+    db.add(cm)
+    db.commit()
+    return ApiResponse(data={"id": cm.id, "user_id": user_id, "username": user.username})
+
+
+@router.delete(
+    "/categories/{category_id}/moderators/{user_id}", response_model=ApiResponse
+)
+def remove_moderator(
+    category_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """取消板块版主（仅管理员）"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅管理员可操作",
+        )
+    cm = (
+        db.query(CategoryModerator)
+        .filter(
+            CategoryModerator.category_id == category_id,
+            CategoryModerator.user_id == user_id,
+        )
+        .first()
+    )
+    if not cm:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该用户不是此板块版主")
+    db.delete(cm)
+    db.commit()
+    return ApiResponse(data={"removed": True})
+
+
+# ===== 管理员/版主操作 =====
 
 
 @router.put("/threads/{thread_id}/pin", response_model=ApiResponse)
@@ -413,12 +635,7 @@ def toggle_pin(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """置顶/取消置顶（管理员或版主）"""
-    if current_user.role not in (UserRole.ADMIN, UserRole.MODERATOR):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="仅管理员或版主可操作",
-        )
+    """置顶/取消置顶（管理员或该板块版主）"""
     thread = db.query(Thread).filter(
         Thread.id == thread_id,
         Thread.is_deleted == False,  # noqa: E712
@@ -427,6 +644,14 @@ def toggle_pin(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
+        )
+    # 权限检查：管理员或该板块版主
+    if current_user.role != UserRole.ADMIN and not _is_category_moderator(
+        db, current_user.id, thread.category_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅管理员或该板块版主可操作",
         )
     thread.is_pinned = not thread.is_pinned
     db.commit()
@@ -439,12 +664,7 @@ def toggle_essential(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """加精/取消加精（管理员或版主）"""
-    if current_user.role not in (UserRole.ADMIN, UserRole.MODERATOR):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="仅管理员或版主可操作",
-        )
+    """加精/取消加精（管理员或该板块版主）"""
     thread = db.query(Thread).filter(
         Thread.id == thread_id,
         Thread.is_deleted == False,  # noqa: E712
@@ -453,6 +673,14 @@ def toggle_essential(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
+        )
+    # 权限检查：管理员或该板块版主
+    if current_user.role != UserRole.ADMIN and not _is_category_moderator(
+        db, current_user.id, thread.category_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅管理员或该板块版主可操作",
         )
     thread.is_essential = not thread.is_essential
     db.commit()
@@ -596,9 +824,11 @@ def delete_thread(
             detail="帖子不存在",
         )
 
-    if thread.user_id != current_user.id and current_user.role not in (
-        UserRole.ADMIN,
-        UserRole.MODERATOR,
+    # 权限检查：作者、管理员或该板块版主
+    if (
+        thread.user_id != current_user.id
+        and current_user.role != UserRole.ADMIN
+        and not _is_category_moderator(db, current_user.id, thread.category_id)
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

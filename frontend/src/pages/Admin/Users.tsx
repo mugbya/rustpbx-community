@@ -13,11 +13,14 @@ import {
   message,
   Popconfirm,
   Typography,
+  Tabs,
 } from 'antd'
 import { UserOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import client from '@/api/client'
+import AdminModerators from '@/pages/Admin/Moderators'
+import AdminCategories from '@/pages/Admin/Categories'
 
 interface AdminUser {
   id: number
@@ -43,6 +46,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('users')
   const [page, setPage] = useState(1)
   const [keyword, setKeyword] = useState('')
   const [roleFilter, setRoleFilter] = useState<string | undefined>(undefined)
@@ -191,7 +195,19 @@ export default function AdminUsers() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
-      <Typography.Title level={3}>用户管理</Typography.Title>
+      <Typography.Title level={3}>管理后台</Typography.Title>
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={[
+          { key: 'users', label: '用户管理' },
+          { key: 'moderators', label: '板块版主' },
+          { key: 'categories', label: '板块管理' },
+        ]}
+        style={{ marginBottom: 16 }}
+      />
+      {activeTab === 'users' && (
+      <>
       <Card>
         <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
           <Input
@@ -276,6 +292,10 @@ export default function AdminUsers() {
           </Radio.Group>
         </div>
       </Modal>
+      </>
+      )}
+      {activeTab === 'moderators' && <AdminModerators />}
+      {activeTab === 'categories' && <AdminCategories />}
     </div>
   )
 }

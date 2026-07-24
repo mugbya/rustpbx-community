@@ -14,9 +14,10 @@ import {
   LoginOutlined,
   EditOutlined,
   TeamOutlined,
+  GithubOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '@/store/auth'
-import { NAV_MENU_ITEMS, DOCS_URL } from '@/utils/constants'
+import { NAV_MENU_ITEMS, DOCS_URL, GITHUB_REPO_URL } from '@/utils/constants'
 
 const { Header, Content, Sider } = Layout
 
@@ -62,6 +63,8 @@ export default function MainLayout() {
   const handleMenuClick = (key: string) => {
     if (key === 'docs') {
       window.open(DOCS_URL, '_blank')
+    } else if (key === 'github') {
+      window.open(GITHUB_REPO_URL, '_blank')
     } else {
       navigate(key)
     }
@@ -161,6 +164,7 @@ export default function MainLayout() {
               ? [{ key: '/admin', icon: <TeamOutlined />, label: '管理后台' }]
               : []),
             { key: 'docs', icon: <BookOutlined />, label: '文档' },
+            { key: 'github', icon: <GithubOutlined />, label: 'GitHub' },
           ]}
           onClick={({ key }) => handleMenuClick(key)}
         />

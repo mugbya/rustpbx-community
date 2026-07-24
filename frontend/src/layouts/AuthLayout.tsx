@@ -1,6 +1,6 @@
 import { Outlet, Link } from 'react-router-dom'
 import { Layout, Typography, Space } from 'antd'
-import { DOCS_URL } from '@/utils/constants'
+import { DOCS_URL, GITHUB_REPO_URL } from '@/utils/constants'
 
 const { Content, Footer } = Layout
 
@@ -67,7 +67,7 @@ export default function AuthLayout() {
           <Typography.Link href={DOCS_URL} target="_blank">
             文档
           </Typography.Link>
-          <Typography.Link href="https://github.com" target="_blank">
+          <Typography.Link href={GITHUB_REPO_URL} target="_blank">
             GitHub
           </Typography.Link>
           <Typography.Text type="secondary">

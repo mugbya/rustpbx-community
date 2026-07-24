@@ -9,6 +9,9 @@ export const GITHUB_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 // 文档站地址
 export const DOCS_URL = 'https://docs.rustpbx.cn/'
 
+// GitHub 仓库地址
+export const GITHUB_REPO_URL = 'https://github.com/restsend/rustpbx'
+
 // Token 在 localStorage 中的存储键名
 export const TOKEN_KEY = 'rustpbx_token'
 

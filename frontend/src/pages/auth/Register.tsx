@@ -3,10 +3,14 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Form, Input, Button, Divider, Typography, message } from 'antd'
 import { MailOutlined, LockOutlined, UserOutlined, GithubOutlined } from '@ant-design/icons'
 import { GITHUB_AUTHORIZE_URL } from '@/utils/constants'
+import client from '@/api/client'
+import { useAuthStore } from '@/store/auth'
+import type { UserInfo } from '@/api/types'
 
 // 注册页
 export default function Register() {
   const navigate = useNavigate()
+  const setAuth = useAuthStore((state) => state.setAuth)
   const [loading, setLoading] = useState(false)
 
   // 邮箱密码注册
@@ -18,13 +22,16 @@ export default function Register() {
   }) => {
     setLoading(true)
     try {
-      // TODO: 调用后端注册接口
-      // await client.post('/auth/register', values)
-      console.log('注册参数：', values)
-      message.success('注册成功，请登录')
-      navigate('/login')
+      const data = await client.post<unknown, { access_token: string; user: UserInfo }>(
+        '/v1/auth/register',
+        { email: values.email, username: values.username, password: values.password },
+      )
+      // 注册成功后自动登录
+      setAuth(data.access_token, data.user)
+      message.success('注册成功')
+      navigate('/')
     } catch {
-      message.error('注册失败，请重试')
+      // 错误已由拦截器处理
     } finally {
       setLoading(false)
     }

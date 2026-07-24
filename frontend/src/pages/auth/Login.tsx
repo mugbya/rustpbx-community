@@ -1,29 +1,35 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Divider, Typography, message } from 'antd'
+import { Form, Input, Button, Divider, Typography, Alert, App as AntApp } from 'antd'
 import { MailOutlined, LockOutlined, GithubOutlined } from '@ant-design/icons'
 import { useAuthStore } from '@/store/auth'
 import { GITHUB_AUTHORIZE_URL } from '@/utils/constants'
+import client from '@/api/client'
+import type { UserInfo } from '@/api/types'
 
 // 登录页：邮箱密码 + GitHub OAuth
 export default function Login() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
+  const { message } = AntApp.useApp()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   // 邮箱密码登录
   const handleLogin = async (values: { email: string; password: string }) => {
+    setError('')
     setLoading(true)
     try {
-      // TODO: 调用后端登录接口，获取 token 和用户信息
-      // const { data } = await client.post('/auth/login', values)
-      // setAuth(data.token, data.user)
-      void setAuth // 待接口对接后启用
-      console.log('登录参数：', values)
+      const data = await client.post<unknown, { access_token: string; user: UserInfo }>(
+        '/v1/auth/login',
+        values,
+      )
+      setAuth(data.access_token, data.user)
       message.success('登录成功')
       navigate('/')
-    } catch {
-      message.error('登录失败，请重试')
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.detail || err?.response?.data?.message
+      setError(errMsg || '登录失败，请检查邮箱和密码')
     } finally {
       setLoading(false)
     }
@@ -52,7 +58,13 @@ export default function Login() {
         欢迎回来
       </Typography.Title>
 
-      <Form name="login" layout="vertical" onFinish={handleLogin} autoComplete="off">
+      <Form
+        name="login"
+        layout="vertical"
+        onFinish={handleLogin}
+        autoComplete="off"
+        onValuesChange={() => error && setError('')}
+      >
         <Form.Item
           name="email"
           label="邮箱"
@@ -71,6 +83,17 @@ export default function Login() {
         >
           <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" size="large" />
         </Form.Item>
+
+        {error && (
+          <Alert
+            type="error"
+            message={error}
+            showIcon
+            closable
+            onClose={() => setError('')}
+            style={{ marginBottom: 16 }}
+          />
+        )}
 
         <Form.Item>
           <Button type="primary" htmlType="submit" block size="large" loading={loading}>

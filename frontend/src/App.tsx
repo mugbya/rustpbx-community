@@ -1,13 +1,16 @@
 import { useEffect } from 'react'
+import { App as AntApp } from 'antd'
 import { AppRouter } from '@/router'
-import { initCdnConfig } from '@/utils/image'
+import { setMessageInstance } from '@/utils/messageHolder'
 
 // 根组件：渲染路由
 function App() {
-  // 初始化 CDN 配置（从后端获取 CDN 域名，用于图片 URL 替换）
+  const { message } = AntApp.useApp()
+
+  // 将 message 实例存到全局，供非组件代码（如 axios 拦截器）使用
   useEffect(() => {
-    initCdnConfig()
-  }, [])
+    setMessageInstance(message)
+  }, [message])
 
   return <AppRouter />
 }

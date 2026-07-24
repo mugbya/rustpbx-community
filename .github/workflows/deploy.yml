@@ -8,6 +8,9 @@ on:
       - 'backend/**'
       - '.github/workflows/deploy.yml'
 
+env:
+  SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -32,13 +35,16 @@ jobs:
         working-directory: frontend
 
       # ===== 部署到 VPS =====
-      - name: Deploy frontend to VPS
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+
+      - name: Deploy frontend to VPS
+        run: |
           rsync -rlgoDzvc --delete \
-            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
+            -e "ssh -p ${SSH_PORT} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
             frontend/dist/ \
             ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/opt/rustpbx-community/frontend/dist/
 
@@ -50,13 +56,13 @@ jobs:
             --exclude='.git/' \
             --exclude='*.pyc' \
             --exclude='.env' \
-            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
+            -e "ssh -p ${SSH_PORT} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new" \
             backend/ \
             ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/opt/rustpbx-community/backend/
 
       - name: Install dependencies & restart service
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+          ssh -p ${SSH_PORT} -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
             ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
             cd /opt/rustpbx-community/backend
             source .venv/bin/activate

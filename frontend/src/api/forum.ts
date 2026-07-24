@@ -128,3 +128,14 @@ export const uploadApi = {
     })
   },
 }
+
+// 问答相关 API
+export const qaApi = {
+  // 采纳答案
+  acceptAnswer: (topicId: number, postId: number) =>
+    client.put<unknown, { message: string }>(`/v1/qa/topics/${topicId}/accept/${postId}`),
+
+  // 标记已解决
+  markSolved: (topicId: number) =>
+    client.put<unknown, { message: string }>(`/v1/qa/topics/${topicId}/solve`),
+}

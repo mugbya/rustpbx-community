@@ -29,11 +29,12 @@ import {
   EditOutlined,
   PushpinOutlined,
   TrophyOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import MarkdownRender from '@/components/MarkdownRender'
 import EmptyState from '@/components/EmptyState'
-import { forumApi, interactionApi } from '@/api/forum'
+import { forumApi, interactionApi, qaApi } from '@/api/forum'
 import { useAuthStore } from '@/store/auth'
 import type { TopicDetail, Post, Category } from '@/api/types'
 
@@ -206,6 +207,31 @@ export default function TopicDetail() {
     }
   }
 
+  // 标记已解决
+  const handleMarkSolved = async () => {
+    if (!topic) return
+    try {
+      await qaApi.markSolved(topic.id)
+      setTopic({ ...topic, is_solved: true })
+      message.success('已标记为已解决')
+    } catch {
+      // 错误已由拦截器处理
+    }
+  }
+
+  // 采纳答案
+  const handleAcceptAnswer = async (postId: number) => {
+    if (!topic) return
+    try {
+      await qaApi.acceptAnswer(topic.id, postId)
+      setTopic({ ...topic, is_solved: true })
+      message.success('已采纳答案')
+      fetchPosts(postsPage)
+    } catch {
+      // 错误已由拦截器处理
+    }
+  }
+
   // 加载中
   if (loading) {
     return (
@@ -365,6 +391,18 @@ export default function TopicDetail() {
                 </Button>
               </>
             )}
+            {topic.type === 'question' && !topic.is_solved && user?.id === topic.author.id && (
+              <Popconfirm
+                title="确定标记为已解决吗？"
+                onConfirm={handleMarkSolved}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button type="text" icon={<CheckCircleOutlined />} style={{ color: '#52c41a' }}>
+                  标记已解决
+                </Button>
+              </Popconfirm>
+            )}
           </Space>
         </Space>
       </Card>
@@ -393,14 +431,27 @@ export default function TopicDetail() {
                     }
                     description={<MarkdownRender content={post.content} />}
                   />
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<LikeOutlined />}
-                    onClick={() => handlePostLike(post.id)}
-                  >
-                    {post.like_count}
-                  </Button>
+                  <Space>
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<LikeOutlined />}
+                      onClick={() => handlePostLike(post.id)}
+                    >
+                      {post.like_count}
+                    </Button>
+                    {topic.type === 'question' && !topic.is_solved && user?.id === topic.author.id && (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<CheckCircleOutlined />}
+                        style={{ color: '#52c41a' }}
+                        onClick={() => handleAcceptAnswer(post.id)}
+                      >
+                        采纳
+                      </Button>
+                    )}
+                  </Space>
                 </List.Item>
               )}
             />

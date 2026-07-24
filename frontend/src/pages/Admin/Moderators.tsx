@@ -3,7 +3,6 @@ import {
   Card,
   Table,
   Avatar,
-  Tag,
   Button,
   Input,
   Select,
@@ -12,13 +11,20 @@ import {
   Popconfirm,
   Typography,
   Empty,
-  Spin,
 } from 'antd'
 import { UserOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { forumApi } from '@/api/forum'
 import client from '@/api/client'
 import type { Category } from '@/api/types'
+
+// 分区选项
+const THREAD_TYPE_OPTIONS = [
+  { label: '论坛', value: 'discussion' },
+  { label: '问答', value: 'question' },
+  { label: '文章', value: 'article' },
+  { label: '资源', value: 'resource' },
+]
 
 interface Moderator {
   id: number
@@ -36,6 +42,7 @@ interface SearchResult {
 }
 
 export default function AdminModerators() {
+  const [selectedType, setSelectedType] = useState<string | undefined>()
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>()
   const [moderators, setModerators] = useState<Moderator[]>([])
@@ -44,10 +51,18 @@ export default function AdminModerators() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
 
-  // 获取板块列表
+  // 选择分区后获取该分区的板块列表
   useEffect(() => {
-    forumApi.getCategories().then(setCategories).catch(() => {})
-  }, [])
+    if (!selectedType) {
+      setCategories([])
+      setSelectedCategory(undefined)
+      setModerators([])
+      return
+    }
+    setSelectedCategory(undefined)
+    setModerators([])
+    forumApi.getCategories(selectedType).then(setCategories).catch(() => {})
+  }, [selectedType])
 
   // 获取版主列表
   const fetchModerators = useCallback(() => {
@@ -144,19 +159,37 @@ export default function AdminModerators() {
   return (
     <div>
       <Card>
+        {/* 第一步：选择分区 */}
         <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
-          <span>选择板块：</span>
+          <span>选择分区：</span>
           <Select
-            placeholder="请选择板块"
-            style={{ width: 200 }}
-            value={selectedCategory}
+            placeholder="请选择分区"
+            style={{ width: 160 }}
+            value={selectedType}
             onChange={(v) => {
-              setSelectedCategory(v)
+              setSelectedType(v)
               setSearchResults([])
             }}
-            options={categories.map((c) => ({ label: c.name, value: c.id }))}
+            options={THREAD_TYPE_OPTIONS}
           />
         </div>
+
+        {/* 第二步：选择板块 */}
+        {selectedType && (
+          <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <span>选择板块：</span>
+            <Select
+              placeholder="请选择板块"
+              style={{ width: 200 }}
+              value={selectedCategory}
+              onChange={(v) => {
+                setSelectedCategory(v)
+                setSearchResults([])
+              }}
+              options={categories.map((c) => ({ label: c.name, value: c.id }))}
+            />
+          </div>
+        )}
 
         {selectedCategory ? (
           <>
@@ -221,8 +254,9 @@ export default function AdminModerators() {
             )}
           </>
         ) : (
-          <Empty description="请先选择一个板块" />
+          selectedType && <Empty description="请选择一个板块" />
         )}
+        {!selectedType && <Empty description="请先选择一个分区" />}
       </Card>
     </div>
   )

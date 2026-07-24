@@ -44,7 +44,7 @@ jobs:
           rsync -rlgoDzvc --delete \
             -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key" \
             frontend/dist/ \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/opt/rustpbx/frontend/dist/
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/opt/rustpbx-community/frontend/dist/
 
       - name: Deploy backend code
         run: |
@@ -55,13 +55,13 @@ jobs:
             --exclude='*.pyc' \
             -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key" \
             backend/ \
-            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/opt/rustpbx/backend/
+            ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}:/opt/rustpbx-community/backend/
 
       - name: Install backend dependencies & restart service
         run: |
           ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key \
             ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }} << 'EOF'
-            cd /opt/rustpbx/backend
+            cd /opt/rustpbx-community/backend
             source .venv/bin/activate
             pip install -r requirements.txt -q
             sudo systemctl restart rustpbx-api

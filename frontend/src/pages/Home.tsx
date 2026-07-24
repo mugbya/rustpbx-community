@@ -13,25 +13,25 @@ import {
 import dayjs from 'dayjs'
 import client from '@/api/client'
 import { forumApi } from '@/api/forum'
-import type { ForumStats, ThreadListItem } from '@/api/types'
+import type { ForumStats, TopicListItem } from '@/api/types'
 import EmptyState from '@/components/EmptyState'
 
 // 首页：社区概览、最新帖子、热门话题
 export default function Home() {
   const navigate = useNavigate()
   const [stats, setStats] = useState<ForumStats | null>(null)
-  const [hotThreads, setHotThreads] = useState<ThreadListItem[]>([])
+  const [hotTopics, setHotTopics] = useState<TopicListItem[]>([])
   const [loading, setLoading] = useState(true)
 
   // 获取社区统计和热门话题
   useEffect(() => {
     Promise.all([
       client.get<unknown, ForumStats>('/v1/forum/stats'),
-      forumApi.getThreads({ is_essential: true, sort: 'views', page: 1, page_size: 10 }),
+      forumApi.getTopics({ is_essential: true, sort: 'views', page: 1, page_size: 10 }),
     ])
-      .then(([statsData, threadsData]) => {
+      .then(([statsData, topicsData]) => {
         setStats(statsData)
-        setHotThreads(threadsData.items)
+        setHotTopics(topicsData.items)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -121,12 +121,12 @@ export default function Home() {
           </Space>
         }
       >
-        {hotThreads.length === 0 ? (
+        {hotTopics.length === 0 ? (
           <EmptyState description="暂无话题，快来发布第一个吧" />
         ) : (
           <List
             itemLayout="horizontal"
-            dataSource={hotThreads}
+            dataSource={hotTopics}
             renderItem={(topic) => (
               <List.Item>
                 <List.Item.Meta

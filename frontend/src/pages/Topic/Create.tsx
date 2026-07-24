@@ -21,10 +21,10 @@ import {
   PictureOutlined,
 } from '@ant-design/icons'
 import { forumApi, uploadApi } from '@/api/forum'
-import type { Category, ThreadType } from '@/api/types'
+import type { Category, TopicType } from '@/api/types'
 
 // 根据帖子类型获取页面标题
-const titleMap: Record<ThreadType, string> = {
+const titleMap: Record<TopicType, string> = {
   discussion: '发帖',
   question: '提问',
   article: '写文章',
@@ -32,7 +32,7 @@ const titleMap: Record<ThreadType, string> = {
 }
 
 // 根据帖子类型获取提交按钮文案
-const submitTextMap: Record<ThreadType, string> = {
+const submitTextMap: Record<TopicType, string> = {
   discussion: '发布帖子',
   question: '发布问题',
   article: '发布文章',
@@ -40,7 +40,7 @@ const submitTextMap: Record<ThreadType, string> = {
 }
 
 // 根据帖子类型获取列表页路径（提交成功后跳转）
-const listPathMap: Record<ThreadType, string> = {
+const listPathMap: Record<TopicType, string> = {
   discussion: '/forum',
   question: '/qa',
   article: '/articles',
@@ -55,7 +55,7 @@ const resourceTypeOptions = [
 ]
 
 // 创建帖子页面（通用：发帖 / 提问 / 写文章 / 上传资源）
-export default function ThreadCreate() {
+export default function TopicCreate() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [form] = Form.useForm()
@@ -68,11 +68,11 @@ export default function ThreadCreate() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 从 URL 参数获取帖子类型
-  const typeParam = searchParams.get('type') as ThreadType | null
-  const threadType: ThreadType = ['discussion', 'question', 'article', 'resource'].includes(
+  const typeParam = searchParams.get('type') as TopicType | null
+  const topicType: TopicType = ['discussion', 'question', 'article', 'resource'].includes(
     typeParam ?? '',
   )
-    ? (typeParam as ThreadType)
+    ? (typeParam as TopicType)
     : 'discussion'
 
   // 编辑模式：从 URL 参数获取帖子 ID
@@ -96,7 +96,7 @@ export default function ThreadCreate() {
     if (!editId) return
     setLoadingCategories(true)
     forumApi
-      .getThread(Number(editId))
+      .getTopic(Number(editId))
       .then((data) => {
         form.setFieldsValue({
           title: data.title,
@@ -184,7 +184,7 @@ export default function ThreadCreate() {
     try {
       if (isEdit && editId) {
         // 编辑模式：更新帖子
-        await forumApi.updateThread(Number(editId), {
+        await forumApi.updateTopic(Number(editId), {
           title: values.title,
           content,
           tags: values.tags || [],
@@ -192,20 +192,20 @@ export default function ThreadCreate() {
         message.success('更新成功')
       } else {
         // 创建模式：新建帖子
-        await forumApi.createThread({
+        await forumApi.createTopic({
           title: values.title,
           content,
           content_type: 'markdown',
-          type: threadType,
+          type: topicType,
           category_id: values.category_id,
           tags: values.tags || [],
-          resource_url: threadType === 'resource' ? values.resource_url : undefined,
-          resource_type: threadType === 'resource' ? values.resource_type : undefined,
+          resource_url: topicType === 'resource' ? values.resource_url : undefined,
+          resource_type: topicType === 'resource' ? values.resource_type : undefined,
         })
         message.success('发布成功')
       }
       // 提交后跳转到对应的列表页
-      navigate(listPathMap[threadType])
+      navigate(listPathMap[topicType])
     } catch {
       // 错误已由拦截器处理
     } finally {
@@ -224,7 +224,7 @@ export default function ThreadCreate() {
 
   return (
     <Card>
-      <Typography.Title level={3}>{isEdit ? '编辑' : titleMap[threadType]}</Typography.Title>
+      <Typography.Title level={3}>{isEdit ? '编辑' : titleMap[topicType]}</Typography.Title>
       <Divider />
 
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -258,7 +258,7 @@ export default function ThreadCreate() {
         </Form.Item>
 
         {/* 资源类型额外字段 */}
-        {threadType === 'resource' && (
+        {topicType === 'resource' && (
           <>
             <Form.Item
               name="resource_url"
@@ -331,9 +331,9 @@ export default function ThreadCreate() {
         <Form.Item>
           <Space>
             <Button type="primary" htmlType="submit" loading={submitting}>
-              {isEdit ? '保存修改' : submitTextMap[threadType]}
+              {isEdit ? '保存修改' : submitTextMap[topicType]}
             </Button>
-            <Button onClick={() => navigate(listPathMap[threadType])}>取消</Button>
+            <Button onClick={() => navigate(listPathMap[topicType])}>取消</Button>
           </Space>
         </Form.Item>
       </Form>

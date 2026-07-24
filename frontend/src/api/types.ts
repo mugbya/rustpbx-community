@@ -43,7 +43,7 @@ export interface Category {
   description: string | null
   icon: string | null
   sort_order: number
-  thread_type: string | null
+  topic_type: string | null
   thread_count: number
   parent_id: number | null
   discussion_count?: number
@@ -53,13 +53,13 @@ export interface Category {
 }
 
 // 帖子类型
-export type ThreadType = 'discussion' | 'question' | 'article' | 'resource'
+export type TopicType = 'discussion' | 'question' | 'article' | 'resource'
 
 // 帖子列表项
-export interface ThreadListItem {
+export interface TopicListItem {
   id: number
   title: string
-  type: ThreadType
+  type: TopicType
   category_id: number | null
   author: AuthorBrief
   view_count: number
@@ -74,12 +74,12 @@ export interface ThreadListItem {
 }
 
 // 帖子详情
-export interface ThreadDetail {
+export interface TopicDetail {
   id: number
   title: string
   content: string
   content_type: string
-  type: ThreadType
+  type: TopicType
   category_id: number | null
   author: AuthorBrief
   view_count: number
@@ -103,7 +103,7 @@ export interface ThreadDetail {
 // 回复
 export interface Post {
   id: number
-  thread_id: number
+  topic_id: number
   author: AuthorBrief
   content: string
   content_type: string

@@ -23,8 +23,8 @@ async def lifespan(app: FastAPI):
             Notification,
             Post,
             Tag,
-            Thread,
-            ThreadTag,
+            Topic,
+            TopicTag,
             User,
         )
 

@@ -15,11 +15,11 @@ class Post(Base, TimestampMixin):
     __tablename__ = "posts"
     __table_args__ = (
         # 回复列表常用查询：按帖子 + 未删除 + 楼层排序
-        Index("ix_posts_thread_deleted_floor", "thread_id", "is_deleted", "floor"),
+        Index("ix_posts_topic_deleted_floor", "topic_id", "is_deleted", "floor"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    thread_id: Mapped[int] = mapped_column(ForeignKey("threads.id"), index=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey("topics.id"), index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     content: Mapped[str] = mapped_column(Text(length=16777215))  # MEDIUMTEXT
     content_type: Mapped[str] = mapped_column(String(20), default="markdown")

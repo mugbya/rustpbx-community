@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_active_user, get_pagination
 from app.db.session import get_db
 from app.models.post import Post
-from app.models.thread import Thread, ThreadType
+from app.models.topic import Topic, TopicType
 from app.models.user import User, UserRole
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.user import UserResponse, UserUpdate
@@ -136,20 +136,20 @@ def update_user_status(
 @router.get("/{user_id}/stats", response_model=ApiResponse)
 def get_user_stats(user_id: int, db: Session = Depends(get_db)):
     """获取用户统计数据"""
-    discussion_count = db.query(Thread).filter(
-        Thread.user_id == user_id,
-        Thread.type == ThreadType.DISCUSSION,
-        Thread.is_deleted == False,  # noqa: E712
+    discussion_count = db.query(Topic).filter(
+        Topic.user_id == user_id,
+        Topic.type == TopicType.DISCUSSION,
+        Topic.is_deleted == False,  # noqa: E712
     ).count()
-    question_count = db.query(Thread).filter(
-        Thread.user_id == user_id,
-        Thread.type == ThreadType.QUESTION,
-        Thread.is_deleted == False,  # noqa: E712
+    question_count = db.query(Topic).filter(
+        Topic.user_id == user_id,
+        Topic.type == TopicType.QUESTION,
+        Topic.is_deleted == False,  # noqa: E712
     ).count()
-    article_count = db.query(Thread).filter(
-        Thread.user_id == user_id,
-        Thread.type == ThreadType.ARTICLE,
-        Thread.is_deleted == False,  # noqa: E712
+    article_count = db.query(Topic).filter(
+        Topic.user_id == user_id,
+        Topic.type == TopicType.ARTICLE,
+        Topic.is_deleted == False,  # noqa: E712
     ).count()
     reply_count = db.query(Post).filter(
         Post.user_id == user_id,
@@ -157,13 +157,13 @@ def get_user_stats(user_id: int, db: Session = Depends(get_db)):
     ).count()
 
     # 获赞数 = 帖子获赞 + 回复获赞
-    thread_likes = db.query(func.sum(Thread.like_count)).filter(
-        Thread.user_id == user_id
+    topic_likes = db.query(func.sum(Topic.like_count)).filter(
+        Topic.user_id == user_id
     ).scalar() or 0
     post_likes = db.query(func.sum(Post.like_count)).filter(
         Post.user_id == user_id
     ).scalar() or 0
-    total_likes = int(thread_likes) + int(post_likes)
+    total_likes = int(topic_likes) + int(post_likes)
 
     return ApiResponse(data={
         "discussion_count": discussion_count,

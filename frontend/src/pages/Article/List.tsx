@@ -5,7 +5,7 @@ import { PlusOutlined, EyeOutlined, LikeOutlined, CalendarOutlined } from '@ant-
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { forumApi } from '@/api/forum'
-import type { Category, ThreadListItem } from '@/api/types'
+import type { Category, TopicListItem } from '@/api/types'
 
 const PAGE_SIZE = 20
 
@@ -13,7 +13,7 @@ const PAGE_SIZE = 20
 export default function ArticleList() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<Category[]>([])
-  const [items, setItems] = useState<ThreadListItem[]>([])
+  const [items, setItems] = useState<TopicListItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
@@ -41,8 +41,8 @@ export default function ArticleList() {
   useEffect(() => {
     setLoading(true)
     forumApi
-      .getThreads({
-        thread_type: 'article',
+      .getTopics({
+        topic_type: 'article',
         category_id: selectedCategory ?? undefined,
         tag: selectedTag ?? undefined,
         page,
@@ -125,7 +125,7 @@ export default function ArticleList() {
       <Card
         title={selectedCategory ? `${categories.find((c) => c.id === selectedCategory)?.name ?? ''}的文章` : '文章'}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/thread/create?type=article')}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/topic/create?type=article')}>
             写文章
           </Button>
         }
@@ -136,7 +136,7 @@ export default function ArticleList() {
           <EmptyState
             description="暂无文章"
             actionText="写文章"
-            onAction={() => navigate('/thread/create?type=article')}
+            onAction={() => navigate('/topic/create?type=article')}
           />
         ) : (
           <>

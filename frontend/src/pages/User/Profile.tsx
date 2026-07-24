@@ -6,11 +6,11 @@ import dayjs from 'dayjs'
 import { useAuthStore } from '@/store/auth'
 import client from '@/api/client'
 import { forumApi } from '@/api/forum'
-import type { UserInfo, UserStats, ThreadListItem, ThreadType } from '@/api/types'
+import type { UserInfo, UserStats, TopicListItem, TopicType } from '@/api/types'
 import EmptyState from '@/components/EmptyState'
 
-// Tab key 到 thread_type 的映射
-const tabToThreadType: Record<string, ThreadType> = {
+// Tab key 到 topic_type 的映射
+const tabToTopicType: Record<string, TopicType> = {
   topics: 'discussion',
   questions: 'question',
   articles: 'article',
@@ -55,10 +55,10 @@ export default function Profile() {
           .finally(() => setTabLoading(false))
         return
       }
-      const threadType = tabToThreadType[tab]
-      if (!threadType) return
+      const topicType = tabToTopicType[tab]
+      if (!topicType) return
       forumApi
-        .getThreads({ user_id: user.id, thread_type: threadType, page: 1, page_size: 20 })
+        .getTopics({ user_id: user.id, topic_type: topicType, page: 1, page_size: 20 })
         .then((data) => setTabDataMap((prev) => ({ ...prev, [tab]: data.items })))
         .catch(() => setTabDataMap((prev) => ({ ...prev, [tab]: [] })))
         .finally(() => setTabLoading(false))
@@ -133,8 +133,8 @@ export default function Profile() {
             <List.Item>
               <List.Item.Meta
                 title={
-                  <Typography.Link onClick={() => navigate(`/forum/topic/${item.thread_id}`)}>
-                    {item.thread_title}
+                  <Typography.Link onClick={() => navigate(`/forum/topic/${item.topic_id}`)}>
+                    {item.topic_title}
                   </Typography.Link>
                 }
                 description={

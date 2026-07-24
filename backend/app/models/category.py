@@ -21,7 +21,7 @@ class Category(Base, TimestampMixin):
     icon: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     # 所属分区：discussion / question / article / resource
-    thread_type: Mapped[Optional[str]] = mapped_column(
+    topic_type: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True, index=True
     )
     # 支持子板块

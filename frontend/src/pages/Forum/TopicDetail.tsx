@@ -35,7 +35,7 @@ import MarkdownRender from '@/components/MarkdownRender'
 import EmptyState from '@/components/EmptyState'
 import { forumApi, interactionApi } from '@/api/forum'
 import { useAuthStore } from '@/store/auth'
-import type { ThreadDetail, Post, Category } from '@/api/types'
+import type { TopicDetail, Post, Category } from '@/api/types'
 
 const POST_PAGE_SIZE = 20
 
@@ -51,9 +51,9 @@ export default function TopicDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const threadId = Number(id)
+  const topicId = Number(id)
 
-  const [thread, setThread] = useState<ThreadDetail | null>(null)
+  const [topic, setTopic] = useState<TopicDetail | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [postsTotal, setPostsTotal] = useState(0)
   const [postsPage, setPostsPage] = useState(1)
@@ -75,27 +75,27 @@ export default function TopicDetail() {
 
   // 获取帖子详情
   useEffect(() => {
-    if (!threadId || isNaN(threadId)) return
+    if (!topicId || isNaN(topicId)) return
     setLoading(true)
     forumApi
-      .getThread(threadId)
+      .getTopic(topicId)
       .then((data) => {
-        setThread(data)
+        setTopic(data)
         setLikeCount(data.like_count)
         setFavoriteCount(data.favorite_count)
       })
       .catch(() => {
-        setThread(null)
+        setTopic(null)
       })
       .finally(() => setLoading(false))
-  }, [threadId])
+  }, [topicId])
 
   // 获取回复列表
   const fetchPosts = useCallback(
     (pageNum: number) => {
       setLoadingPosts(true)
       forumApi
-        .getPosts(threadId, { page: pageNum, page_size: POST_PAGE_SIZE })
+        .getPosts(topicId, { page: pageNum, page_size: POST_PAGE_SIZE })
         .then((data) => {
           setPosts(data.items)
           setPostsTotal(data.total)
@@ -103,18 +103,18 @@ export default function TopicDetail() {
         .catch(() => {})
         .finally(() => setLoadingPosts(false))
     },
-    [threadId],
+    [topicId],
   )
 
   useEffect(() => {
-    if (!threadId || isNaN(threadId)) return
+    if (!topicId || isNaN(topicId)) return
     fetchPosts(postsPage)
-  }, [fetchPosts, postsPage, threadId])
+  }, [fetchPosts, postsPage, topicId])
 
   // 点赞
   const handleLike = async () => {
     try {
-      const { liked, like_count } = await interactionApi.toggleLike('thread', threadId)
+      const { liked, like_count } = await interactionApi.toggleLike('thread', topicId)
       setLiked(liked)
       setLikeCount(like_count)
     } catch {
@@ -125,7 +125,7 @@ export default function TopicDetail() {
   // 收藏
   const handleFavorite = async () => {
     try {
-      const { favorited, favorite_count } = await interactionApi.toggleFavorite('thread', threadId)
+      const { favorited, favorite_count } = await interactionApi.toggleFavorite('thread', topicId)
       setFavorited(favorited)
       setFavoriteCount(favorite_count)
     } catch {
@@ -151,15 +151,15 @@ export default function TopicDetail() {
     }
     setSubmitting(true)
     try {
-      await forumApi.createPost(threadId, { content: replyContent })
+      await forumApi.createPost(topicId, { content: replyContent })
       message.success('回复成功')
       setReplyContent('')
       // 刷新回复列表
       fetchPosts(postsPage)
       // 刷新帖子详情（更新回复数）
       forumApi
-        .getThread(threadId)
-        .then((data) => setThread(data))
+        .getTopic(topicId)
+        .then((data) => setTopic(data))
         .catch(() => {})
     } catch {
       // 错误已由拦截器处理
@@ -172,7 +172,7 @@ export default function TopicDetail() {
   const handleDelete = async () => {
     setDeleting(true)
     try {
-      await forumApi.deleteThread(threadId)
+      await forumApi.deleteTopic(topicId)
       message.success('删除成功')
       navigate('/forum')
     } catch {
@@ -184,10 +184,10 @@ export default function TopicDetail() {
 
   // 置顶/取消置顶
   const handleTogglePin = async () => {
-    if (!thread) return
+    if (!topic) return
     try {
-      const data = await forumApi.togglePin(thread.id)
-      setThread({ ...thread, is_pinned: data.is_pinned })
+      const data = await forumApi.togglePin(topic.id)
+      setTopic({ ...topic, is_pinned: data.is_pinned })
       message.success(data.is_pinned ? '已置顶' : '已取消置顶')
     } catch {
       // 错误已由拦截器处理
@@ -196,10 +196,10 @@ export default function TopicDetail() {
 
   // 加精/取消加精
   const handleToggleEssential = async () => {
-    if (!thread) return
+    if (!topic) return
     try {
-      const data = await forumApi.toggleEssential(thread.id)
-      setThread({ ...thread, is_essential: data.is_essential })
+      const data = await forumApi.toggleEssential(topic.id)
+      setTopic({ ...topic, is_essential: data.is_essential })
       message.success(data.is_essential ? '已加精' : '已取消加精')
     } catch {
       // 错误已由拦截器处理
@@ -216,7 +216,7 @@ export default function TopicDetail() {
   }
 
   // 帖子不存在
-  if (!thread) {
+  if (!topic) {
     return (
       <Card>
         <EmptyState
@@ -229,9 +229,9 @@ export default function TopicDetail() {
   }
 
   // 判断是否可以删除（作者或管理员/板块版主）
-  const canDelete = user && (user.id === thread.author.id || thread.can_moderate)
+  const canDelete = user && (user.id === topic.author.id || topic.can_moderate)
   // 判断是否可以编辑（仅作者）
-  const canEdit = user && user.id === thread.author.id
+  const canEdit = user && user.id === topic.author.id
 
   return (
     <Space direction="vertical" size={24} style={{ width: '100%' }}>
@@ -242,30 +242,30 @@ export default function TopicDetail() {
       {/* 帖子正文 */}
       <Card>
         <Space direction="vertical" size={16} style={{ width: '100%' }}>
-          <Typography.Title level={3}>{thread.title}</Typography.Title>
+          <Typography.Title level={3}>{topic.title}</Typography.Title>
 
           <Space split={<span>·</span>} wrap>
             <Space>
-              <Avatar size="small" src={thread.author.avatar}>
-                {thread.author.username[0]}
+              <Avatar size="small" src={topic.author.avatar}>
+                {topic.author.username[0]}
               </Avatar>
-              <span>{thread.author.username}</span>
+              <span>{topic.author.username}</span>
             </Space>
-            {thread.is_pinned && <Tag color="red">置顶</Tag>}
-            {thread.is_essential && <Tag color="gold">精华</Tag>}
-            {thread.is_solved && <Tag color="success">已解决</Tag>}
-            {thread.is_locked && <Tag icon={<LockOutlined />}>已锁定</Tag>}
-            {thread.category_id && (() => {
-              const cat = categories.find((c) => c.id === thread.category_id)
+            {topic.is_pinned && <Tag color="red">置顶</Tag>}
+            {topic.is_essential && <Tag color="gold">精华</Tag>}
+            {topic.is_solved && <Tag color="success">已解决</Tag>}
+            {topic.is_locked && <Tag icon={<LockOutlined />}>已锁定</Tag>}
+            {topic.category_id && (() => {
+              const cat = categories.find((c) => c.id === topic.category_id)
               return cat ? <Tag color="blue">{cat.name}</Tag> : null
             })()}
-            <span>{dayjs(thread.created_at).format('YYYY-MM-DD HH:mm')}</span>
+            <span>{dayjs(topic.created_at).format('YYYY-MM-DD HH:mm')}</span>
           </Space>
 
           {/* 标签 */}
-          {thread.tags.length > 0 && (
+          {topic.tags.length > 0 && (
             <Space>
-              {thread.tags.map((tag) => (
+              {topic.tags.map((tag) => (
                 <Tag key={tag} style={{ cursor: 'pointer' }} onClick={() => navigate(`/forum?tag=${encodeURIComponent(tag)}`)}>
                   {tag}
                 </Tag>
@@ -275,24 +275,24 @@ export default function TopicDetail() {
 
           <Divider />
 
-          <MarkdownRender content={thread.content} />
+          <MarkdownRender content={topic.content} />
 
           {/* 资源链接 */}
-          {thread.resource_url && (
+          {topic.resource_url && (
             <div>
               <Space>
                 <Typography.Text strong>资源链接：</Typography.Text>
                 <Button
                   type="link"
                   icon={<DownloadOutlined />}
-                  href={thread.resource_url}
+                  href={topic.resource_url}
                   target="_blank"
                 >
                   下载
                 </Button>
-                {thread.resource_type && (
+                {topic.resource_type && (
                   <Tag color="blue">
-                    {resourceTypeMap[thread.resource_type] || thread.resource_type}
+                    {resourceTypeMap[topic.resource_type] || topic.resource_type}
                   </Tag>
                 )}
               </Space>
@@ -318,16 +318,16 @@ export default function TopicDetail() {
               收藏 {favoriteCount}
             </Button>
             <Button type="text" icon={<MessageOutlined />}>
-              回复 {thread.reply_count}
+              回复 {topic.reply_count}
             </Button>
             <Button type="text" icon={<EyeOutlined />}>
-              浏览 {thread.view_count}
+              浏览 {topic.view_count}
             </Button>
             {canEdit && (
               <Button
                 type="text"
                 icon={<EditOutlined />}
-                onClick={() => navigate(`/thread/create?type=${thread.type}&id=${thread.id}`)}
+                onClick={() => navigate(`/topic/create?type=${topic.type}&id=${topic.id}`)}
               >
                 编辑
               </Button>
@@ -345,23 +345,23 @@ export default function TopicDetail() {
                 </Button>
               </Popconfirm>
             )}
-            {thread.can_moderate && (
+            {topic.can_moderate && (
               <>
                 <Button
                   type="text"
                   icon={<PushpinOutlined />}
                   onClick={handleTogglePin}
-                  style={thread.is_pinned ? { color: '#ff4d4f' } : undefined}
+                  style={topic.is_pinned ? { color: '#ff4d4f' } : undefined}
                 >
-                  {thread.is_pinned ? '取消置顶' : '置顶'}
+                  {topic.is_pinned ? '取消置顶' : '置顶'}
                 </Button>
                 <Button
                   type="text"
                   icon={<TrophyOutlined />}
                   onClick={handleToggleEssential}
-                  style={thread.is_essential ? { color: '#faad14' } : undefined}
+                  style={topic.is_essential ? { color: '#faad14' } : undefined}
                 >
-                  {thread.is_essential ? '取消加精' : '加精'}
+                  {topic.is_essential ? '取消加精' : '加精'}
                 </Button>
               </>
             )}
@@ -420,7 +420,7 @@ export default function TopicDetail() {
       </Card>
 
       {/* 回复输入框 */}
-      {!thread.is_locked ? (
+      {!topic.is_locked ? (
         <Card title="发表回复">
           <Input.TextArea
             rows={4}

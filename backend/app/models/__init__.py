@@ -10,8 +10,8 @@ from app.models.interaction import (
     TargetType,
 )
 from app.models.post import Post
-from app.models.tag import Tag, ThreadTag
-from app.models.thread import Thread, ThreadType
+from app.models.tag import Tag, TopicTag
+from app.models.topic import Topic, TopicType
 from app.models.user import User, UserRole
 
 __all__ = [
@@ -24,9 +24,9 @@ __all__ = [
     "Post",
     "Tag",
     "TargetType",
-    "Thread",
-    "ThreadTag",
-    "ThreadType",
+    "Topic",
+    "TopicTag",
+    "TopicType",
     "User",
     "UserRole",
 ]

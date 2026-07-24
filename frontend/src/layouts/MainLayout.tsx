@@ -78,7 +78,7 @@ export default function MainLayout() {
       navigate('/login')
       return
     }
-    navigate(`/thread/create?type=${key}`)
+    navigate(`/topic/create?type=${key}`)
   }
 
   // 用户下拉菜单

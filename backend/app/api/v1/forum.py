@@ -13,8 +13,8 @@ from app.db.session import get_db
 from app.models.category import Category
 from app.models.category_moderator import CategoryModerator
 from app.models.post import Post
-from app.models.tag import Tag, ThreadTag
-from app.models.thread import Thread, ThreadType
+from app.models.tag import Tag, TopicTag
+from app.models.topic import Topic, TopicType
 from app.models.user import User, UserRole
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.forum import (
@@ -22,10 +22,10 @@ from app.schemas.forum import (
     CategoryResponse,
     PostCreate,
     PostResponse,
-    ThreadCreate,
-    ThreadDetail,
-    ThreadListItem,
-    ThreadUpdate,
+    TopicCreate,
+    TopicDetail,
+    TopicListItem,
+    TopicUpdate,
 )
 
 router = APIRouter()
@@ -72,21 +72,21 @@ def _is_category_moderator(db: Session, user_id: int, category_id: int) -> bool:
     )
 
 
-def _get_tags(db: Session, thread_id: int) -> list[str]:
+def _get_tags(db: Session, topic_id: int) -> list[str]:
     """获取帖子的标签列表"""
     rows = (
         db.query(Tag.name)
-        .join(ThreadTag, ThreadTag.tag_id == Tag.id)
-        .filter(ThreadTag.thread_id == thread_id)
+        .join(TopicTag, TopicTag.tag_id == Tag.id)
+        .filter(TopicTag.topic_id == topic_id)
         .all()
     )
     return [r[0] for r in rows]
 
 
-def _sync_tags(db: Session, thread: Thread, tag_names: list[str]) -> None:
+def _sync_tags(db: Session, topic: Topic, tag_names: list[str]) -> None:
     """同步帖子标签"""
     # 删除旧关联
-    db.query(ThreadTag).filter(ThreadTag.thread_id == thread.id).delete()
+    db.query(TopicTag).filter(TopicTag.topic_id == topic.id).delete()
     # 创建新关联
     for name in tag_names:
         name = name.strip()
@@ -100,7 +100,7 @@ def _sync_tags(db: Session, thread: Thread, tag_names: list[str]) -> None:
             tag.usage_count = 1
         else:
             tag.usage_count += 1
-        db.add(ThreadTag(thread_id=thread.id, tag_id=tag.id))
+        db.add(TopicTag(topic_id=topic.id, tag_id=tag.id))
 
 
 # ===== 公开配置 =====
@@ -124,18 +124,18 @@ def get_public_config():
 
 @router.get("/categories", response_model=ApiResponse)
 def list_categories(
-    thread_type: str | None = Query(None),
+    topic_type: str | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """获取板块列表（含各类型帖子数统计，可按分区筛选）"""
     query = db.query(Category).filter(Category.is_active == True)  # noqa: E712
-    if thread_type:
-        # thread_type 存储为逗号分隔的值（如 "discussion,question"），NULL 表示全局
+    if topic_type:
+        # topic_type 存储为逗号分隔的值（如 "discussion,question"），NULL 表示全局
         query = query.filter(
             or_(
-                Category.thread_type.is_(None),
-                Category.thread_type == "",
-                func.find_in_set(thread_type, Category.thread_type) > 0,
+                Category.topic_type.is_(None),
+                Category.topic_type == "",
+                func.find_in_set(topic_type, Category.topic_type) > 0,
             )
         )
     categories = query.order_by(Category.sort_order).all()
@@ -143,14 +143,14 @@ def list_categories(
     # 单次聚合查询所有板块的各类型帖子数，避免 N+1 查询
     stats = (
         db.query(
-            Thread.category_id,
-            func.sum(case((Thread.type == ThreadType.DISCUSSION, 1), else_=0)).label("discussion_count"),
-            func.sum(case((Thread.type == ThreadType.QUESTION, 1), else_=0)).label("question_count"),
-            func.sum(case((Thread.type == ThreadType.ARTICLE, 1), else_=0)).label("article_count"),
-            func.sum(case((Thread.type == ThreadType.RESOURCE, 1), else_=0)).label("resource_count"),
+            Topic.category_id,
+            func.sum(case((Topic.type == TopicType.DISCUSSION, 1), else_=0)).label("discussion_count"),
+            func.sum(case((Topic.type == TopicType.QUESTION, 1), else_=0)).label("question_count"),
+            func.sum(case((Topic.type == TopicType.ARTICLE, 1), else_=0)).label("article_count"),
+            func.sum(case((Topic.type == TopicType.RESOURCE, 1), else_=0)).label("resource_count"),
         )
-        .filter(Thread.is_deleted == False)  # noqa: E712
-        .group_by(Thread.category_id)
+        .filter(Topic.is_deleted == False)  # noqa: E712
+        .group_by(Topic.category_id)
         .all()
     )
 
@@ -179,17 +179,17 @@ def list_categories(
 @router.get("/stats", response_model=ApiResponse)
 def get_forum_stats(db: Session = Depends(get_db)):
     """获取社区统计数据"""
-    discussion_count = db.query(Thread).filter(
-        Thread.type == ThreadType.DISCUSSION,
-        Thread.is_deleted == False,  # noqa: E712
+    discussion_count = db.query(Topic).filter(
+        Topic.type == TopicType.DISCUSSION,
+        Topic.is_deleted == False,  # noqa: E712
     ).count()
-    question_count = db.query(Thread).filter(
-        Thread.type == ThreadType.QUESTION,
-        Thread.is_deleted == False,  # noqa: E712
+    question_count = db.query(Topic).filter(
+        Topic.type == TopicType.QUESTION,
+        Topic.is_deleted == False,  # noqa: E712
     ).count()
-    article_count = db.query(Thread).filter(
-        Thread.type == ThreadType.ARTICLE,
-        Thread.is_deleted == False,  # noqa: E712
+    article_count = db.query(Topic).filter(
+        Topic.type == TopicType.ARTICLE,
+        Topic.is_deleted == False,  # noqa: E712
     ).count()
     user_count = db.query(User).count()
 
@@ -208,25 +208,25 @@ def get_forum_stats(db: Session = Depends(get_db)):
 
 @router.get("/tags", response_model=ApiResponse)
 def list_tags(
-    thread_type: ThreadType | None = Query(None),
+    topic_type: TopicType | None = Query(None),
     db: Session = Depends(get_db),
 ):
     """获取热门标签列表（可按帖子类型筛选，只返回有该类型帖子的标签）"""
-    if thread_type:
+    if topic_type:
         tags = (
             db.query(
                 Tag.id.label("id"),
                 Tag.name.label("name"),
-                func.count(ThreadTag.thread_id).label("usage_count"),
+                func.count(TopicTag.topic_id).label("usage_count"),
             )
-            .join(ThreadTag, ThreadTag.tag_id == Tag.id)
-            .join(Thread, Thread.id == ThreadTag.thread_id)
+            .join(TopicTag, TopicTag.tag_id == Tag.id)
+            .join(Topic, Topic.id == TopicTag.topic_id)
             .filter(
-                Thread.type == thread_type,
-                Thread.is_deleted == False,  # noqa: E712
+                Topic.type == topic_type,
+                Topic.is_deleted == False,  # noqa: E712
             )
             .group_by(Tag.id, Tag.name)
-            .order_by(func.count(ThreadTag.thread_id).desc())
+            .order_by(func.count(TopicTag.topic_id).desc())
             .limit(20)
             .all()
         )
@@ -246,10 +246,10 @@ def list_tags(
     )
 
 
-@router.get("/threads", response_model=PaginatedData[ThreadListItem])
-def list_threads(
+@router.get("/topics", response_model=PaginatedData[TopicListItem])
+def list_topics(
     category_id: int | None = Query(None),
-    thread_type: ThreadType | None = Query(None),
+    topic_type: TopicType | None = Query(None),
     keyword: str | None = Query(None),
     user_id: int | None = Query(None),
     tag: str | None = Query(None),
@@ -259,45 +259,45 @@ def list_threads(
     db: Session = Depends(get_db),
 ):
     """获取帖子列表"""
-    query = db.query(Thread).filter(Thread.is_deleted == False)  # noqa: E712
+    query = db.query(Topic).filter(Topic.is_deleted == False)  # noqa: E712
 
     if category_id is not None:
-        query = query.filter(Thread.category_id == category_id)
-    if thread_type is not None:
-        query = query.filter(Thread.type == thread_type)
+        query = query.filter(Topic.category_id == category_id)
+    if topic_type is not None:
+        query = query.filter(Topic.type == topic_type)
     if keyword:
-        query = query.filter(Thread.title.contains(keyword))
+        query = query.filter(Topic.title.contains(keyword))
     if user_id is not None:
-        query = query.filter(Thread.user_id == user_id)
+        query = query.filter(Topic.user_id == user_id)
     if tag:
-        query = query.join(ThreadTag, ThreadTag.thread_id == Thread.id).join(
-            Tag, Tag.id == ThreadTag.tag_id
+        query = query.join(TopicTag, TopicTag.topic_id == Topic.id).join(
+            Tag, Tag.id == TopicTag.tag_id
         ).filter(Tag.name == tag)
     if is_essential is not None:
-        query = query.filter(Thread.is_essential == is_essential)
+        query = query.filter(Topic.is_essential == is_essential)
 
     # 排序：置顶帖始终在最前
     if sort == "views":
-        query = query.order_by(Thread.is_pinned.desc(), Thread.view_count.desc())
+        query = query.order_by(Topic.is_pinned.desc(), Topic.view_count.desc())
     elif sort == "replies":
-        query = query.order_by(Thread.is_pinned.desc(), Thread.reply_count.desc())
+        query = query.order_by(Topic.is_pinned.desc(), Topic.reply_count.desc())
     else:
-        query = query.order_by(Thread.is_pinned.desc(), Thread.last_reply_at.desc())
+        query = query.order_by(Topic.is_pinned.desc(), Topic.last_reply_at.desc())
 
     total = query.count()
-    threads = (
+    topics = (
         query.offset(pagination["offset"])
         .limit(pagination["page_size"])
         .all()
     )
 
     # 批量获取作者信息，避免 N+1 查询
-    user_map = _batch_authors(db, {t.user_id for t in threads})
+    user_map = _batch_authors(db, {t.user_id for t in topics})
 
     items = []
-    for t in threads:
+    for t in topics:
         items.append(
-            ThreadListItem(
+            TopicListItem(
                 id=t.id,
                 title=t.title,
                 type=t.type,
@@ -326,56 +326,56 @@ def list_threads(
 # ===== 帖子详情 =====
 
 
-@router.get("/threads/{thread_id}", response_model=ApiResponse)
-def get_thread(
-    thread_id: int,
+@router.get("/topics/{topic_id}", response_model=ApiResponse)
+def get_topic(
+    topic_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(get_optional_user),
 ):
     """获取帖子详情"""
-    thread = db.query(Thread).filter(
-        Thread.id == thread_id,
-        Thread.is_deleted == False,  # noqa: E712
+    topic = db.query(Topic).filter(
+        Topic.id == topic_id,
+        Topic.is_deleted == False,  # noqa: E712
     ).first()
-    if not thread:
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
         )
 
     # 增加浏览量
-    thread.view_count += 1
+    topic.view_count += 1
     db.commit()
 
-    data = ThreadDetail(
-        id=thread.id,
-        title=thread.title,
-        content=thread.content,
-        content_type=thread.content_type,
-        type=thread.type,
-        category_id=thread.category_id,
-        author=_get_author(db, thread.user_id),
-        view_count=thread.view_count,
-        reply_count=thread.reply_count,
-        like_count=thread.like_count,
-        favorite_count=thread.favorite_count,
-        is_pinned=thread.is_pinned,
-        is_essential=thread.is_essential,
-        is_locked=thread.is_locked,
-        is_solved=thread.is_solved,
-        tags=_get_tags(db, thread.id),
-        resource_url=thread.resource_url,
-        resource_type=thread.resource_type,
-        created_at=thread.created_at,
-        updated_at=thread.updated_at,
-        last_reply_at=thread.last_reply_at,
-        last_reply_user_id=thread.last_reply_user_id,
+    data = TopicDetail(
+        id=topic.id,
+        title=topic.title,
+        content=topic.content,
+        content_type=topic.content_type,
+        type=topic.type,
+        category_id=topic.category_id,
+        author=_get_author(db, topic.user_id),
+        view_count=topic.view_count,
+        reply_count=topic.reply_count,
+        like_count=topic.like_count,
+        favorite_count=topic.favorite_count,
+        is_pinned=topic.is_pinned,
+        is_essential=topic.is_essential,
+        is_locked=topic.is_locked,
+        is_solved=topic.is_solved,
+        tags=_get_tags(db, topic.id),
+        resource_url=topic.resource_url,
+        resource_type=topic.resource_type,
+        created_at=topic.created_at,
+        updated_at=topic.updated_at,
+        last_reply_at=topic.last_reply_at,
+        last_reply_user_id=topic.last_reply_user_id,
     ).model_dump()
 
     # 当前用户是否可以管理该帖子（管理员或该板块版主）
     data["can_moderate"] = current_user is not None and (
         current_user.role == UserRole.ADMIN
-        or _is_category_moderator(db, current_user.id, thread.category_id)
+        or _is_category_moderator(db, current_user.id, topic.category_id)
     )
 
     return ApiResponse(data=data)
@@ -404,11 +404,11 @@ def list_user_posts(
     )
 
     # 批量获取帖子标题
-    thread_ids = {p.thread_id for p in posts}
-    threads = (
-        db.query(Thread.id, Thread.title).filter(Thread.id.in_(thread_ids)).all()
-    ) if thread_ids else []
-    thread_map = {t.id: t.title for t in threads}
+    topic_ids = {p.topic_id for p in posts}
+    topics = (
+        db.query(Topic.id, Topic.title).filter(Topic.id.in_(topic_ids)).all()
+    ) if topic_ids else []
+    topic_map = {t.id: t.title for t in topics}
 
     # 批量获取作者
     post_user_map = _batch_authors(db, {p.user_id for p in posts})
@@ -416,8 +416,8 @@ def list_user_posts(
     items = [
         {
             "id": p.id,
-            "thread_id": p.thread_id,
-            "thread_title": thread_map.get(p.thread_id, ""),
+            "topic_id": p.topic_id,
+            "topic_title": topic_map.get(p.topic_id, ""),
             "author": _author_from_map(post_user_map, p.user_id).model_dump(),
             "content": p.content,
             "floor": p.floor,
@@ -444,14 +444,14 @@ class CategoryCreateRequest(BaseModel):
     name: str
     slug: str
     description: str | None = None
-    thread_type: str | None = None
+    topic_type: str | None = None
     sort_order: int = 0
 
 
 class CategoryUpdateRequest(BaseModel):
     name: str | None = None
     description: str | None = None
-    thread_type: str | None = None
+    topic_type: str | None = None
     sort_order: int | None = None
     is_active: bool | None = None
 
@@ -472,7 +472,7 @@ def create_category(
         name=request.name,
         slug=request.slug,
         description=request.description,
-        thread_type=request.thread_type,
+        topic_type=request.topic_type,
         sort_order=request.sort_order,
     )
     db.add(category)
@@ -498,8 +498,8 @@ def update_category(
         category.name = request.name
     if request.description is not None:
         category.description = request.description
-    if request.thread_type is not None:
-        category.thread_type = request.thread_type
+    if request.topic_type is not None:
+        category.topic_type = request.topic_type
     if request.sort_order is not None:
         category.sort_order = request.sort_order
     if request.is_active is not None:
@@ -633,70 +633,70 @@ def remove_moderator(
 # ===== 管理员/版主操作 =====
 
 
-@router.put("/threads/{thread_id}/pin", response_model=ApiResponse)
+@router.put("/topics/{topic_id}/pin", response_model=ApiResponse)
 def toggle_pin(
-    thread_id: int,
+    topic_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """置顶/取消置顶（管理员或该板块版主）"""
-    thread = db.query(Thread).filter(
-        Thread.id == thread_id,
-        Thread.is_deleted == False,  # noqa: E712
+    topic = db.query(Topic).filter(
+        Topic.id == topic_id,
+        Topic.is_deleted == False,  # noqa: E712
     ).first()
-    if not thread:
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
         )
     # 权限检查：管理员或该板块版主
     if current_user.role != UserRole.ADMIN and not _is_category_moderator(
-        db, current_user.id, thread.category_id
+        db, current_user.id, topic.category_id
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="仅管理员或该板块版主可操作",
         )
-    thread.is_pinned = not thread.is_pinned
+    topic.is_pinned = not topic.is_pinned
     db.commit()
-    return ApiResponse(data={"is_pinned": thread.is_pinned})
+    return ApiResponse(data={"is_pinned": topic.is_pinned})
 
 
-@router.put("/threads/{thread_id}/essential", response_model=ApiResponse)
+@router.put("/topics/{topic_id}/essential", response_model=ApiResponse)
 def toggle_essential(
-    thread_id: int,
+    topic_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """加精/取消加精（管理员或该板块版主）"""
-    thread = db.query(Thread).filter(
-        Thread.id == thread_id,
-        Thread.is_deleted == False,  # noqa: E712
+    topic = db.query(Topic).filter(
+        Topic.id == topic_id,
+        Topic.is_deleted == False,  # noqa: E712
     ).first()
-    if not thread:
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
         )
     # 权限检查：管理员或该板块版主
     if current_user.role != UserRole.ADMIN and not _is_category_moderator(
-        db, current_user.id, thread.category_id
+        db, current_user.id, topic.category_id
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="仅管理员或该板块版主可操作",
         )
-    thread.is_essential = not thread.is_essential
+    topic.is_essential = not topic.is_essential
     db.commit()
-    return ApiResponse(data={"is_essential": thread.is_essential})
+    return ApiResponse(data={"is_essential": topic.is_essential})
 
 
 # ===== 发帖 =====
 
 
-@router.post("/threads", response_model=ApiResponse, status_code=201)
-def create_thread(
-    request: ThreadCreate,
+@router.post("/topics", response_model=ApiResponse, status_code=201)
+def create_topic(
+    request: TopicCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -713,7 +713,7 @@ def create_thread(
                 detail="板块不存在或已关闭",
             )
 
-    thread = Thread(
+    topic = Topic(
         title=request.title,
         content=request.content,
         content_type=request.content_type,
@@ -723,12 +723,12 @@ def create_thread(
         resource_url=request.resource_url,
         resource_type=request.resource_type,
     )
-    db.add(thread)
+    db.add(topic)
     db.flush()
 
     # 处理标签
     if request.tags:
-        _sync_tags(db, thread, request.tags)
+        _sync_tags(db, topic, request.tags)
 
     # 更新板块帖子数
     if request.category_id:
@@ -737,32 +737,32 @@ def create_thread(
         ).update({Category.thread_count: Category.thread_count + 1})
 
     db.commit()
-    db.refresh(thread)
+    db.refresh(topic)
 
     return ApiResponse(
-        data=ThreadDetail(
-            id=thread.id,
-            title=thread.title,
-            content=thread.content,
-            content_type=thread.content_type,
-            type=thread.type,
-            category_id=thread.category_id,
-            author=_get_author(db, thread.user_id),
-            view_count=thread.view_count,
-            reply_count=thread.reply_count,
-            like_count=thread.like_count,
-            favorite_count=thread.favorite_count,
-            is_pinned=thread.is_pinned,
-            is_essential=thread.is_essential,
-            is_locked=thread.is_locked,
-            is_solved=thread.is_solved,
-            tags=_get_tags(db, thread.id),
-            resource_url=thread.resource_url,
-            resource_type=thread.resource_type,
-            created_at=thread.created_at,
-            updated_at=thread.updated_at,
-            last_reply_at=thread.last_reply_at,
-            last_reply_user_id=thread.last_reply_user_id,
+        data=TopicDetail(
+            id=topic.id,
+            title=topic.title,
+            content=topic.content,
+            content_type=topic.content_type,
+            type=topic.type,
+            category_id=topic.category_id,
+            author=_get_author(db, topic.user_id),
+            view_count=topic.view_count,
+            reply_count=topic.reply_count,
+            like_count=topic.like_count,
+            favorite_count=topic.favorite_count,
+            is_pinned=topic.is_pinned,
+            is_essential=topic.is_essential,
+            is_locked=topic.is_locked,
+            is_solved=topic.is_solved,
+            tags=_get_tags(db, topic.id),
+            resource_url=topic.resource_url,
+            resource_type=topic.resource_type,
+            created_at=topic.created_at,
+            updated_at=topic.updated_at,
+            last_reply_at=topic.last_reply_at,
+            last_reply_user_id=topic.last_reply_user_id,
         ).model_dump()
     )
 
@@ -770,59 +770,59 @@ def create_thread(
 # ===== 编辑帖子 =====
 
 
-@router.put("/threads/{thread_id}", response_model=ApiResponse)
-def update_thread(
-    thread_id: int,
-    request: ThreadUpdate,
+@router.put("/topics/{topic_id}", response_model=ApiResponse)
+def update_topic(
+    topic_id: int,
+    request: TopicUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """编辑帖子"""
-    thread = db.query(Thread).filter(
-        Thread.id == thread_id,
-        Thread.is_deleted == False,  # noqa: E712
+    topic = db.query(Topic).filter(
+        Topic.id == topic_id,
+        Topic.is_deleted == False,  # noqa: E712
     ).first()
-    if not thread:
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
         )
 
     # 权限检查：作者或管理员
-    if thread.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+    if topic.user_id != current_user.id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="无权编辑此帖子",
         )
 
     if request.title is not None:
-        thread.title = request.title
+        topic.title = request.title
     if request.content is not None:
-        thread.content = request.content
+        topic.content = request.content
     if request.tags is not None:
-        _sync_tags(db, thread, request.tags)
+        _sync_tags(db, topic, request.tags)
 
     db.commit()
-    db.refresh(thread)
+    db.refresh(topic)
 
-    return ApiResponse(data={"id": thread.id, "message": "更新成功"})
+    return ApiResponse(data={"id": topic.id, "message": "更新成功"})
 
 
 # ===== 删除帖子 =====
 
 
-@router.delete("/threads/{thread_id}", response_model=ApiResponse)
-def delete_thread(
-    thread_id: int,
+@router.delete("/topics/{topic_id}", response_model=ApiResponse)
+def delete_topic(
+    topic_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """删除帖子（软删除）"""
-    thread = db.query(Thread).filter(
-        Thread.id == thread_id,
-        Thread.is_deleted == False,  # noqa: E712
+    topic = db.query(Topic).filter(
+        Topic.id == topic_id,
+        Topic.is_deleted == False,  # noqa: E712
     ).first()
-    if not thread:
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
@@ -830,16 +830,16 @@ def delete_thread(
 
     # 权限检查：作者、管理员或该板块版主
     if (
-        thread.user_id != current_user.id
+        topic.user_id != current_user.id
         and current_user.role != UserRole.ADMIN
-        and not _is_category_moderator(db, current_user.id, thread.category_id)
+        and not _is_category_moderator(db, current_user.id, topic.category_id)
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="无权删除此帖子",
         )
 
-    thread.is_deleted = True
+    topic.is_deleted = True
     db.commit()
     return ApiResponse(message="删除成功")
 
@@ -847,22 +847,22 @@ def delete_thread(
 # ===== 回复列表 =====
 
 
-@router.get("/threads/{thread_id}/posts", response_model=PaginatedData[PostResponse])
+@router.get("/topics/{topic_id}/posts", response_model=PaginatedData[PostResponse])
 def list_posts(
-    thread_id: int,
+    topic_id: int,
     pagination: dict = Depends(get_pagination),
     db: Session = Depends(get_db),
 ):
     """获取帖子回复列表"""
-    thread = db.query(Thread).filter(Thread.id == thread_id).first()
-    if not thread:
+    topic = db.query(Topic).filter(Topic.id == topic_id).first()
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
         )
 
     query = db.query(Post).filter(
-        Post.thread_id == thread_id,
+        Post.topic_id == topic_id,
         Post.is_deleted == False,  # noqa: E712
     )
     total = query.count()
@@ -879,7 +879,7 @@ def list_posts(
     items = [
         PostResponse(
             id=p.id,
-            thread_id=p.thread_id,
+            topic_id=p.topic_id,
             author=_author_from_map(post_user_map, p.user_id),
             content=p.content,
             content_type=p.content_type,
@@ -902,38 +902,38 @@ def list_posts(
 # ===== 发表回复 =====
 
 
-@router.post("/threads/{thread_id}/posts", response_model=ApiResponse, status_code=201)
+@router.post("/topics/{topic_id}/posts", response_model=ApiResponse, status_code=201)
 def create_post(
-    thread_id: int,
+    topic_id: int,
     request: PostCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """发表回复"""
-    thread = db.query(Thread).filter(
-        Thread.id == thread_id,
-        Thread.is_deleted == False,  # noqa: E712
+    topic = db.query(Topic).filter(
+        Topic.id == topic_id,
+        Topic.is_deleted == False,  # noqa: E712
     ).first()
-    if not thread:
+    if not topic:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="帖子不存在",
         )
 
-    if thread.is_locked:
+    if topic.is_locked:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="帖子已锁定，无法回复",
         )
 
     # 计算楼层号
-    floor = (thread.reply_count or 0) + 1
+    floor = (topic.reply_count or 0) + 1
 
     # 校验楼中楼父回复
     if request.parent_id:
         parent = db.query(Post).filter(
             Post.id == request.parent_id,
-            Post.thread_id == thread_id,
+            Post.topic_id == topic_id,
         ).first()
         if not parent:
             raise HTTPException(
@@ -942,7 +942,7 @@ def create_post(
             )
 
     post = Post(
-        thread_id=thread_id,
+        topic_id=topic_id,
         user_id=current_user.id,
         content=request.content,
         floor=floor,
@@ -951,9 +951,9 @@ def create_post(
     db.add(post)
 
     # 更新帖子统计
-    thread.reply_count = floor
-    thread.last_reply_at = datetime.now(timezone.utc)
-    thread.last_reply_user_id = current_user.id
+    topic.reply_count = floor
+    topic.last_reply_at = datetime.now(timezone.utc)
+    topic.last_reply_user_id = current_user.id
 
     db.commit()
     db.refresh(post)
@@ -961,7 +961,7 @@ def create_post(
     return ApiResponse(
         data=PostResponse(
             id=post.id,
-            thread_id=post.thread_id,
+            topic_id=post.topic_id,
             author=_get_author(db, post.user_id),
             content=post.content,
             content_type=post.content_type,

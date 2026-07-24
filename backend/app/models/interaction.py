@@ -22,7 +22,7 @@ from app.db.session import Base
 class TargetType(str, enum.Enum):
     """点赞/收藏目标类型"""
 
-    THREAD = "thread"
+    TOPIC = "topic"
     POST = "post"
 
 

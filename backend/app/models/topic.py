@@ -20,7 +20,7 @@ from app.db.session import Base
 from app.models.base import TimestampMixin
 
 
-class ThreadType(str, enum.Enum):
+class TopicType(str, enum.Enum):
     """帖子类型"""
 
     DISCUSSION = "discussion"  # 讨论
@@ -29,25 +29,25 @@ class ThreadType(str, enum.Enum):
     RESOURCE = "resource"      # 资源
 
 
-class Thread(Base, TimestampMixin):
+class Topic(Base, TimestampMixin):
     """主题帖表，统一管理讨论/问答/文章/资源"""
 
-    __tablename__ = "threads"
+    __tablename__ = "topics"
     __table_args__ = (
         # 列表页常用查询：按类型 + 板块筛选
-        Index("ix_threads_type_deleted_category", "type", "is_deleted", "category_id"),
+        Index("ix_topics_type_deleted_category", "type", "is_deleted", "category_id"),
         # 个人中心常用查询：按类型 + 用户筛选
-        Index("ix_threads_type_deleted_user", "type", "is_deleted", "user_id"),
+        Index("ix_topics_type_deleted_user", "type", "is_deleted", "user_id"),
         # 板块筛选
-        Index("ix_threads_deleted_category", "is_deleted", "category_id"),
+        Index("ix_topics_deleted_category", "is_deleted", "category_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255), index=True)
     content: Mapped[str] = mapped_column(Text(length=16777215))  # MEDIUMTEXT
     content_type: Mapped[str] = mapped_column(String(20), default="markdown")
-    type: Mapped[ThreadType] = mapped_column(
-        Enum(ThreadType), default=ThreadType.DISCUSSION, index=True
+    type: Mapped[TopicType] = mapped_column(
+        Enum(TopicType), default=TopicType.DISCUSSION, index=True
     )
 
     # 关联

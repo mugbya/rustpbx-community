@@ -11,7 +11,7 @@ def main():
 
         # 修复所有表的 created_at 和 updated_at 默认值
         tables_with_timestamps = [
-            "users", "categories", "threads", "posts",
+            "users", "categories", "topics", "posts",
             "tags", "likes", "favorites", "notifications",
         ]
         for table in tables_with_timestamps:
@@ -37,14 +37,14 @@ def main():
 
         # 创建复合索引
         indexes = [
-            ("threads", "ix_threads_type_deleted_category",
+            ("topics", "ix_topics_type_deleted_category",
              "type, is_deleted, category_id"),
-            ("threads", "ix_threads_type_deleted_user",
+            ("topics", "ix_topics_type_deleted_user",
              "type, is_deleted, user_id"),
-            ("threads", "ix_threads_deleted_category",
+            ("topics", "ix_topics_deleted_category",
              "is_deleted, category_id"),
-            ("posts", "ix_posts_thread_deleted_floor",
-             "thread_id, is_deleted, floor"),
+            ("posts", "ix_posts_topic_deleted_floor",
+             "topic_id, is_deleted, floor"),
         ]
         for table, index_name, columns in indexes:
             try:

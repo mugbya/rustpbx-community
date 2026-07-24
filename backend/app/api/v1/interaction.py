@@ -12,7 +12,7 @@ from app.models.interaction import (
     TargetType,
 )
 from app.models.post import Post
-from app.models.thread import Thread
+from app.models.topic import Topic
 from app.models.user import User
 from app.schemas.common import ApiResponse, PaginatedData
 from pydantic import BaseModel
@@ -23,7 +23,7 @@ router = APIRouter()
 class LikeRequest(BaseModel):
     """点赞请求"""
 
-    target_type: str  # "thread" | "post"
+    target_type: str  # "topic" | "post"
     target_id: int
 
 
@@ -53,8 +53,8 @@ def toggle_like(
     target_type = TargetType(request.target_type)
 
     # 校验目标存在
-    if target_type == TargetType.THREAD:
-        target = db.query(Thread).filter(Thread.id == request.target_id).first()
+    if target_type == TargetType.TOPIC:
+        target = db.query(Topic).filter(Topic.id == request.target_id).first()
     else:
         target = db.query(Post).filter(Post.id == request.target_id).first()
     if not target:
@@ -73,7 +73,7 @@ def toggle_like(
     if existing:
         # 取消点赞
         db.delete(existing)
-        if target_type == TargetType.THREAD:
+        if target_type == TargetType.TOPIC:
             target.like_count = max(0, target.like_count - 1)
         else:
             target.like_count = max(0, target.like_count - 1)
@@ -105,13 +105,13 @@ def toggle_favorite(
     target_type = TargetType(request.target_type)
 
     # 仅支持帖子收藏
-    if target_type != TargetType.THREAD:
+    if target_type != TargetType.TOPIC:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="仅支持收藏帖子",
         )
 
-    target = db.query(Thread).filter(Thread.id == request.target_id).first()
+    target = db.query(Topic).filter(Topic.id == request.target_id).first()
     if not target:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

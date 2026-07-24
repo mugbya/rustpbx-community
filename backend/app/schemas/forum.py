@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.thread import ThreadType
+from app.models.topic import TopicType
 
 
 class CategoryResponse(BaseModel):
@@ -19,7 +19,7 @@ class CategoryResponse(BaseModel):
     description: Optional[str] = None
     icon: Optional[str] = None
     sort_order: int
-    thread_type: Optional[str] = None
+    topic_type: Optional[str] = None
     thread_count: int
     parent_id: Optional[int] = None
 
@@ -32,14 +32,14 @@ class AuthorBrief(BaseModel):
     avatar: Optional[str] = None
 
 
-class ThreadListItem(BaseModel):
+class TopicListItem(BaseModel):
     """帖子列表项"""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     title: str
-    type: ThreadType
+    type: TopicType
     category_id: Optional[int] = None
     author: AuthorBrief
     view_count: int
@@ -53,7 +53,7 @@ class ThreadListItem(BaseModel):
     last_reply_at: Optional[datetime] = None
 
 
-class ThreadDetail(BaseModel):
+class TopicDetail(BaseModel):
     """帖子详情"""
 
     model_config = ConfigDict(from_attributes=True)
@@ -62,7 +62,7 @@ class ThreadDetail(BaseModel):
     title: str
     content: str
     content_type: str
-    type: ThreadType
+    type: TopicType
     category_id: Optional[int] = None
     author: AuthorBrief
     view_count: int
@@ -82,20 +82,20 @@ class ThreadDetail(BaseModel):
     last_reply_user_id: Optional[int] = None
 
 
-class ThreadCreate(BaseModel):
+class TopicCreate(BaseModel):
     """发帖请求"""
 
     title: str = Field(min_length=2, max_length=255)
     content: str = Field(min_length=1)
     content_type: str = "markdown"
-    type: ThreadType = ThreadType.DISCUSSION
+    type: TopicType = TopicType.DISCUSSION
     category_id: Optional[int] = None
     tags: List[str] = Field(default=[], max_length=5)
     resource_url: Optional[str] = None
     resource_type: Optional[str] = None
 
 
-class ThreadUpdate(BaseModel):
+class TopicUpdate(BaseModel):
     """编辑帖子"""
 
     title: Optional[str] = Field(None, min_length=2, max_length=255)
@@ -109,7 +109,7 @@ class PostResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    thread_id: int
+    topic_id: int
     author: AuthorBrief
     content: str
     content_type: str

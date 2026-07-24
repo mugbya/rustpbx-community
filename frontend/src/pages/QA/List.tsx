@@ -5,7 +5,7 @@ import { PlusOutlined, MessageOutlined, EyeOutlined, CheckCircleOutlined } from 
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { forumApi } from '@/api/forum'
-import type { Category, ThreadListItem } from '@/api/types'
+import type { Category, TopicListItem } from '@/api/types'
 
 const PAGE_SIZE = 20
 
@@ -13,7 +13,7 @@ const PAGE_SIZE = 20
 export default function QAList() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<Category[]>([])
-  const [items, setItems] = useState<ThreadListItem[]>([])
+  const [items, setItems] = useState<TopicListItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
@@ -41,8 +41,8 @@ export default function QAList() {
   useEffect(() => {
     setLoading(true)
     forumApi
-      .getThreads({
-        thread_type: 'question',
+      .getTopics({
+        topic_type: 'question',
         category_id: selectedCategory ?? undefined,
         tag: selectedTag ?? undefined,
         page,
@@ -125,7 +125,7 @@ export default function QAList() {
       <Card
         title={selectedCategory ? `${categories.find((c) => c.id === selectedCategory)?.name ?? ''}的问答` : '问答'}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/thread/create?type=question')}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/topic/create?type=question')}>
             提问
           </Button>
         }
@@ -136,7 +136,7 @@ export default function QAList() {
           <EmptyState
             description="暂无问答"
             actionText="提问"
-            onAction={() => navigate('/thread/create?type=question')}
+            onAction={() => navigate('/topic/create?type=question')}
           />
         ) : (
           <>

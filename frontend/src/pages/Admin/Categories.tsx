@@ -19,7 +19,7 @@ import { forumApi } from '@/api/forum'
 import type { Category } from '@/api/types'
 
 // 分区名称映射
-const threadTypeMap: Record<string, string> = {
+const topicTypeMap: Record<string, string> = {
   discussion: '论坛',
   question: '问答',
   article: '文章',
@@ -27,7 +27,7 @@ const threadTypeMap: Record<string, string> = {
 }
 
 // 分区选项（多选用）
-const threadTypeOptions = [
+const topicTypeOptions = [
   { label: '论坛', value: 'discussion' },
   { label: '问答', value: 'question' },
   { label: '文章', value: 'article' },
@@ -44,7 +44,7 @@ interface CategoryFormValues {
   name: string
   slug: string
   description?: string
-  thread_type?: string[]
+  topic_type?: string[]
   sort_order?: number
   is_active?: boolean
 }
@@ -56,7 +56,7 @@ export default function AdminCategories() {
   const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(null)
   const [form] = Form.useForm<CategoryFormValues>()
 
-  // 获取所有板块列表（不传 thread_type，获取全部）
+  // 获取所有板块列表（不传 topic_type，获取全部）
   const fetchCategories = useCallback(() => {
     setLoading(true)
     forumApi
@@ -74,7 +74,7 @@ export default function AdminCategories() {
   const handleCreate = () => {
     setEditingCategory(null)
     form.resetFields()
-    form.setFieldsValue({ thread_type: [], sort_order: 0 })
+    form.setFieldsValue({ topic_type: [], sort_order: 0 })
     setModalOpen(true)
   }
 
@@ -82,12 +82,12 @@ export default function AdminCategories() {
   const handleEdit = (record: AdminCategory) => {
     setEditingCategory(record)
     // 把逗号分隔的字符串转为数组
-    const typeArray = record.thread_type ? record.thread_type.split(',') : []
+    const typeArray = record.topic_type ? record.topic_type.split(',') : []
     form.setFieldsValue({
       name: record.name,
       slug: record.slug,
       description: record.description ?? undefined,
-      thread_type: typeArray,
+      topic_type: typeArray,
       sort_order: record.sort_order,
       is_active: record.is_active ?? true,
     })
@@ -99,15 +99,15 @@ export default function AdminCategories() {
     try {
       const values = await form.validateFields()
       // 数组转为逗号分隔的字符串，空数组表示全部分区
-      const thread_type = values.thread_type?.length
-        ? values.thread_type.join(',')
+      const topic_type = values.topic_type?.length
+        ? values.topic_type.join(',')
         : undefined
       if (editingCategory) {
         // 编辑板块
         await forumApi.updateCategory(editingCategory.id, {
           name: values.name,
           description: values.description,
-          thread_type,
+          topic_type,
           sort_order: values.sort_order,
           is_active: values.is_active,
         })
@@ -118,7 +118,7 @@ export default function AdminCategories() {
           name: values.name,
           slug: values.slug,
           description: values.description,
-          thread_type,
+          topic_type,
           sort_order: values.sort_order,
         })
         message.success('创建成功')
@@ -148,16 +148,16 @@ export default function AdminCategories() {
     },
     {
       title: '所属分区',
-      dataIndex: 'thread_type',
+      dataIndex: 'topic_type',
       width: 200,
-      render: (threadType: string | null) => {
-        if (!threadType) return <Tag color="default">全部分区</Tag>
-        const types = threadType.split(',')
+      render: (topicType: string | null) => {
+        if (!topicType) return <Tag color="default">全部分区</Tag>
+        const types = topicType.split(',')
         return (
           <Space wrap size={[4, 4]}>
             {types.map((t) => (
               <Tag key={t} color="blue">
-                {threadTypeMap[t] ?? t}
+                {topicTypeMap[t] ?? t}
               </Tag>
             ))}
           </Space>
@@ -251,13 +251,13 @@ export default function AdminCategories() {
             <Input.TextArea placeholder="请输入描述" rows={3} />
           </Form.Item>
           <Form.Item
-            name="thread_type"
+            name="topic_type"
             label="所属分区（不选则属于全部分区）"
           >
             <Select
               mode="multiple"
               placeholder="选择分区（可多选，不选为全部）"
-              options={threadTypeOptions}
+              options={topicTypeOptions}
               allowClear
             />
           </Form.Item>

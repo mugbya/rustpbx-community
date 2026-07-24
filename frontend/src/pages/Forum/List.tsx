@@ -5,7 +5,7 @@ import { PlusOutlined, MessageOutlined, EyeOutlined, LikeOutlined, StarOutlined 
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { forumApi } from '@/api/forum'
-import type { Category, ThreadListItem } from '@/api/types'
+import type { Category, TopicListItem } from '@/api/types'
 
 const PAGE_SIZE = 20
 
@@ -13,14 +13,14 @@ const PAGE_SIZE = 20
 export default function ForumList() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<Category[]>([])
-  const [threads, setThreads] = useState<ThreadListItem[]>([])
+  const [topics, setTopics] = useState<TopicListItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [tags, setTags] = useState<{ id: number; name: string; usage_count: number }[]>([])
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [loadingCats, setLoadingCats] = useState(false)
-  const [loadingThreads, setLoadingThreads] = useState(false)
+  const [loadingTopics, setLoadingTopics] = useState(false)
 
   // 获取板块分类列表
   useEffect(() => {
@@ -39,21 +39,21 @@ export default function ForumList() {
 
   // 获取帖子列表（按选中板块筛选）
   useEffect(() => {
-    setLoadingThreads(true)
+    setLoadingTopics(true)
     forumApi
-      .getThreads({
-        thread_type: 'discussion',
+      .getTopics({
+        topic_type: 'discussion',
         category_id: selectedCategory ?? undefined,
         tag: selectedTag ?? undefined,
         page,
         page_size: PAGE_SIZE,
       })
       .then((data) => {
-        setThreads(data.items)
+        setTopics(data.items)
         setTotal(data.total)
       })
       .catch(() => {})
-      .finally(() => setLoadingThreads(false))
+      .finally(() => setLoadingTopics(false))
   }, [page, selectedCategory, selectedTag])
 
   // 点击板块：切换筛选
@@ -74,7 +74,7 @@ export default function ForumList() {
       <Card
         title="论坛板块"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/thread/create?type=discussion')}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/topic/create?type=discussion')}>
             发帖
           </Button>
         }
@@ -131,19 +131,19 @@ export default function ForumList() {
 
       {/* 帖子列表 */}
       <Card title={selectedCategory ? `${categories.find((c) => c.id === selectedCategory)?.name ?? ''}的帖子` : '最新帖子'}>
-        {loadingThreads ? (
+        {loadingTopics ? (
           <Spin />
-        ) : threads.length === 0 ? (
+        ) : topics.length === 0 ? (
           <EmptyState
             description="暂无帖子"
             actionText="发帖"
-            onAction={() => navigate('/thread/create?type=discussion')}
+            onAction={() => navigate('/topic/create?type=discussion')}
           />
         ) : (
           <>
             <List
               itemLayout="horizontal"
-              dataSource={threads}
+              dataSource={topics}
               renderItem={(item) => (
                 <List.Item
                   style={{ cursor: 'pointer' }}

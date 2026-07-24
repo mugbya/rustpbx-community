@@ -18,11 +18,11 @@ class Tag(Base, TimestampMixin):
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
 
 
-class ThreadTag(Base):
+class TopicTag(Base):
     """帖子-标签关联表"""
 
-    __tablename__ = "thread_tags"
+    __tablename__ = "topic_tags"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    thread_id: Mapped[int] = mapped_column(ForeignKey("threads.id"))
+    topic_id: Mapped[int] = mapped_column(ForeignKey("topics.id"))
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"))

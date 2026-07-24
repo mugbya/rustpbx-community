@@ -5,7 +5,7 @@ import { PlusOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { forumApi } from '@/api/forum'
-import type { Category, ThreadListItem } from '@/api/types'
+import type { Category, TopicListItem } from '@/api/types'
 
 const PAGE_SIZE = 20
 
@@ -13,7 +13,7 @@ const PAGE_SIZE = 20
 export default function ResourceList() {
   const navigate = useNavigate()
   const [categories, setCategories] = useState<Category[]>([])
-  const [items, setItems] = useState<ThreadListItem[]>([])
+  const [items, setItems] = useState<TopicListItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
@@ -41,8 +41,8 @@ export default function ResourceList() {
   useEffect(() => {
     setLoading(true)
     forumApi
-      .getThreads({
-        thread_type: 'resource',
+      .getTopics({
+        topic_type: 'resource',
         category_id: selectedCategory ?? undefined,
         tag: selectedTag ?? undefined,
         page,
@@ -125,7 +125,7 @@ export default function ResourceList() {
       <Card
         title={selectedCategory ? `${categories.find((c) => c.id === selectedCategory)?.name ?? ''}的资源` : '资源'}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/thread/create?type=resource')}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/topic/create?type=resource')}>
             上传资源
           </Button>
         }
@@ -136,7 +136,7 @@ export default function ResourceList() {
           <EmptyState
             description="暂无资源"
             actionText="上传资源"
-            onAction={() => navigate('/thread/create?type=resource')}
+            onAction={() => navigate('/topic/create?type=resource')}
           />
         ) : (
           <>

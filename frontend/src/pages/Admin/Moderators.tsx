@@ -19,7 +19,7 @@ import client from '@/api/client'
 import type { Category } from '@/api/types'
 
 // 分区选项
-const THREAD_TYPE_OPTIONS = [
+const TOPIC_TYPE_OPTIONS = [
   { label: '论坛', value: 'discussion' },
   { label: '问答', value: 'question' },
   { label: '文章', value: 'article' },
@@ -170,7 +170,7 @@ export default function AdminModerators() {
               setSelectedType(v)
               setSearchResults([])
             }}
-            options={THREAD_TYPE_OPTIONS}
+            options={TOPIC_TYPE_OPTIONS}
           />
         </div>
 

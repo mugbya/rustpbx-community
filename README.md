@@ -124,33 +124,44 @@ npm run dev
 
 ## 数据库表结构
 
-共 9 张表，核心设计是 `threads` 一张表统一管理 4 种内容类型（讨论/问答/文章/资源），通过 `type` 字段区分。
+共 10 张表，核心设计是 `topics` 一张表统一管理 4 种内容类型（讨论/问答/文章/资源），通过 `type` 字段区分。
+
+### 概念说明
+
+| 概念 | 说明 | 谁能管理 |
+|------|------|---------|
+| 分区 | 论坛、问答、文章、资源（固定 4 个，不可变） | 固定 |
+| 板块 | 综合讨论、安装部署等（属于某个分区，可多选分区） | 管理员 |
+| 标签 | 用户发帖时自定义 | 用户 |
+| 版主 | 管理某个板块的帖子（置顶/加精/删除） | 管理员分配 |
 
 ### 表说明
 
 | 表名 | 用途 | 关键字段 |
 |------|------|----------|
 | `users` | 用户账号 | email, username, password_hash, role(user/moderator/admin), reputation, github_id |
-| `categories` | 板块分类（综合讨论、安装部署、SIP配置等） | name, slug, description, thread_count, parent_id |
-| `threads` | 主题帖（统一存储讨论/问答/文章/资源） | title, content, type(discussion/question/article/resource), category_id, user_id, view_count, reply_count, like_count, is_pinned, is_essential, is_locked, is_solved, is_deleted |
-| `posts` | 回复/评论 | thread_id, user_id, content, floor, parent_id（楼中楼）, like_count, is_deleted |
+| `categories` | 板块分类（综合讨论、安装部署、SIP配置等） | name, slug, description, topic_type(所属分区), sort_order, is_active |
+| `topics` | 主题帖（统一存储讨论/问答/文章/资源） | title, content, type(discussion/question/article/resource), category_id, user_id, view_count, reply_count, like_count, is_pinned, is_essential, is_locked, is_solved, is_deleted |
+| `posts` | 回复/评论 | topic_id, user_id, content, floor, parent_id（楼中楼）, like_count, is_deleted |
 | `tags` | 标签 | name, slug, usage_count |
-| `thread_tags` | 帖子-标签多对多关联 | thread_id, tag_id |
-| `likes` | 点赞记录 | user_id, target_type(thread/post), target_id |
-| `favorites` | 收藏记录 | user_id, target_type(thread/post), target_id |
+| `topic_tags` | 帖子-标签多对多关联 | topic_id, tag_id |
+| `category_moderators` | 板块版主关联 | category_id, user_id |
+| `likes` | 点赞记录 | user_id, target_type(topic/post), target_id |
+| `favorites` | 收藏记录 | user_id, target_type(topic/post), target_id |
 | `notifications` | 站内通知 | user_id, type(reply/like/favorite/mention/system), from_user_id, is_read |
 
 ### 表关系
 
 ```
-users ─┬─< threads ─┬─< posts（回复）
-       │            ├─< thread_tags >─ tags
+users ─┬─< topics ──┬─< posts（回复）
+       │            ├─< topic_tags >─ tags
        │            └─< likes / favorites
        ├─< likes（点赞）
        ├─< favorites（收藏）
-       └─< notifications（通知）
+       ├─< notifications（通知）
+       └─< category_moderators >─ categories（版主关联）
 
-categories ─< threads（板块分类筛选）
+categories ─< topics（板块分类筛选）
 ```
 
 ### 复合索引
@@ -159,10 +170,11 @@ categories ─< threads（板块分类筛选）
 
 | 索引名 | 表 | 字段 | 优化场景 |
 |--------|------|------|----------|
-| `ix_threads_type_deleted_category` | threads | type, is_deleted, category_id | 列表页按类型+板块筛选 |
-| `ix_threads_type_deleted_user` | threads | type, is_deleted, user_id | 个人中心按类型+用户筛选 |
-| `ix_threads_deleted_category` | threads | is_deleted, category_id | 按板块筛选 |
-| `ix_posts_thread_deleted_floor` | posts | thread_id, is_deleted, floor | 回复列表按帖子+楼层排序 |
+| `ix_topics_type_deleted_category` | topics | type, is_deleted, category_id | 列表页按类型+板块筛选 |
+| `ix_topics_type_deleted_user` | topics | type, is_deleted, user_id | 个人中心按类型+用户筛选 |
+| `ix_topics_deleted_category` | topics | is_deleted, category_id | 按板块筛选 |
+| `ix_posts_topic_deleted_floor` | posts | topic_id, is_deleted, floor | 回复列表按帖子+楼层排序 |
+| `ix_categories_topic_type` | categories | topic_type | 按分区筛选板块 |
 
 ### 默认板块
 

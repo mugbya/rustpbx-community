@@ -6,7 +6,7 @@ import dayjs from 'dayjs'
 import { useAuthStore } from '@/store/auth'
 import client from '@/api/client'
 import { forumApi } from '@/api/forum'
-import type { UserInfo, UserStats, TopicListItem, TopicType } from '@/api/types'
+import type { UserInfo, UserStats, TopicType } from '@/api/types'
 import EmptyState from '@/components/EmptyState'
 
 // Tab key 到 topic_type 的映射

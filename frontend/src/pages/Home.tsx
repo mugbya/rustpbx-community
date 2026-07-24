@@ -31,7 +31,7 @@ export default function Home() {
     ])
       .then(([statsData, topicsData]) => {
         setStats(statsData)
-        setHotTopics(topicsData.items)
+        setHotTopics(topicsData?.items || [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))

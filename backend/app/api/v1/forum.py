@@ -7,6 +7,7 @@ from sqlalchemy import case, desc, func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user, get_pagination
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.post import Post

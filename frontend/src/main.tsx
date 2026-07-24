@@ -20,6 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           // Rust 社区主题色：暖橙红
           colorPrimary: '#ce422b',
           borderRadius: 6,
+          fontSize: 15,
           fontFamily:
             '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
         },

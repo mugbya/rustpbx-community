@@ -50,7 +50,7 @@ def upload_file(
     if ext:
         unique_name = f"{unique_name}.{ext}"
 
-    key = f"{folder}/{date_str}/{unique_name}"
+    key = f"{settings.APP_ENV}/{folder}/{date_str}/{unique_name}"
 
     client.put_object(
         Bucket=settings.COS_BUCKET,

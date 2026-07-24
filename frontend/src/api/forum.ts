@@ -118,12 +118,13 @@ export const uploadApi = {
     })
   },
 
-  // 上传文件
-  uploadFile: (file: File) => {
+  // 上传文件（可指定存储目录）
+  uploadFile: (file: File, folder?: string) => {
     const formData = new FormData()
     formData.append('file', file)
     return client.post<unknown, { url: string }>('/v1/upload/file', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      params: folder ? { folder } : undefined,
     })
   },
 }

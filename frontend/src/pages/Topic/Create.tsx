@@ -64,8 +64,11 @@ export default function TopicCreate() {
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingFile, setUploadingFile] = useState(false)
+
   const editorRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const resourceFileRef = useRef<HTMLInputElement>(null)
 
   // 从 URL 参数获取帖子类型
   const typeParam = searchParams.get('type') as TopicType | null
@@ -168,6 +171,42 @@ export default function TopicCreate() {
     }
   }
 
+  // 资源文件上传处理
+  const handleResourceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 获取当前选择的资源类型
+    const resourceType = form.getFieldValue('resource_type')
+    if (!resourceType) {
+      message.warning('请先选择资源类型')
+      e.target.value = ''
+      return
+    }
+
+    // 前端检查文件大小（5MB）
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      message.error(`文件大小 ${(file.size / 1024 / 1024).toFixed(1)}MB 超过 5MB 限制`)
+      e.target.value = ''
+      return
+    }
+
+    setUploadingFile(true)
+    try {
+      // 根据资源类型上传到不同目录
+      const folder = `files/${resourceType}`
+      const { url } = await uploadApi.uploadFile(file, folder)
+      form.setFieldValue('resource_url', url)
+      message.success('文件上传成功')
+    } catch {
+      // 错误已由拦截器处理
+    } finally {
+      setUploadingFile(false)
+      e.target.value = ''
+    }
+  }
+
   // 提交表单
   const handleSubmit = async (values: {
     title: string
@@ -261,19 +300,35 @@ export default function TopicCreate() {
         {topicType === 'resource' && (
           <>
             <Form.Item
-              name="resource_url"
-              label="资源链接"
-              rules={[{ required: true, message: '请输入资源链接' }]}
-            >
-              <Input placeholder="请输入资源下载链接" />
-            </Form.Item>
-            <Form.Item
               name="resource_type"
               label="资源类型"
               rules={[{ required: true, message: '请选择资源类型' }]}
             >
               <Select placeholder="请选择资源类型" options={resourceTypeOptions} />
             </Form.Item>
+            <Form.Item
+              name="resource_url"
+              label="资源链接"
+              rules={[{ required: true, message: '请上传文件或输入资源链接' }]}
+            >
+              <Input
+                placeholder="请先选择资源类型，再上传文件或手动输入链接"
+                addonAfter={
+                  <span
+                    style={{ cursor: uploadingFile ? 'wait' : 'pointer', color: '#1677ff' }}
+                    onClick={() => !uploadingFile && resourceFileRef.current?.click()}
+                  >
+                    {uploadingFile ? '上传中...' : '上传文件'}
+                  </span>
+                }
+              />
+            </Form.Item>
+            <input
+              ref={resourceFileRef}
+              type="file"
+              style={{ display: 'none' }}
+              onChange={handleResourceUpload}
+            />
           </>
         )}
 

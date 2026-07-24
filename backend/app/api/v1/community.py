@@ -96,13 +96,13 @@ def list_posts(
     if keyword:
         query = query.filter(CommunityPost.title.contains(keyword))
 
-    # 排序
+    # 排序：按更新时间、创建时间倒序
     if sort == "views":
-        query = query.order_by(CommunityPost.view_count.desc())
+        query = query.order_by(CommunityPost.view_count.desc(), CommunityPost.updated_at.desc(), CommunityPost.created_at.desc())
     elif sort == "replies":
-        query = query.order_by(CommunityPost.reply_count.desc())
+        query = query.order_by(CommunityPost.reply_count.desc(), CommunityPost.updated_at.desc(), CommunityPost.created_at.desc())
     else:
-        query = query.order_by(CommunityPost.last_reply_at.desc())
+        query = query.order_by(CommunityPost.updated_at.desc(), CommunityPost.created_at.desc())
 
     total = query.count()
     posts = (

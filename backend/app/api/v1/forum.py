@@ -276,13 +276,13 @@ def list_topics(
     if is_essential is not None:
         query = query.filter(Topic.is_essential == is_essential)
 
-    # 排序：置顶帖始终在最前
+    # 排序：置顶帖始终在最前，其次按更新时间、创建时间倒序
     if sort == "views":
-        query = query.order_by(Topic.is_pinned.desc(), Topic.view_count.desc())
+        query = query.order_by(Topic.is_pinned.desc(), Topic.view_count.desc(), Topic.updated_at.desc(), Topic.created_at.desc())
     elif sort == "replies":
-        query = query.order_by(Topic.is_pinned.desc(), Topic.reply_count.desc())
+        query = query.order_by(Topic.is_pinned.desc(), Topic.reply_count.desc(), Topic.updated_at.desc(), Topic.created_at.desc())
     else:
-        query = query.order_by(Topic.is_pinned.desc(), Topic.last_reply_at.desc())
+        query = query.order_by(Topic.is_pinned.desc(), Topic.updated_at.desc(), Topic.created_at.desc())
 
     total = query.count()
     topics = (

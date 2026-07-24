@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Divider, Typography, message } from 'antd'
+import { Form, Input, Button, Divider, Typography, Alert, App as AntApp } from 'antd'
 import { MailOutlined, LockOutlined, UserOutlined, GithubOutlined } from '@ant-design/icons'
 import { GITHUB_AUTHORIZE_URL } from '@/utils/constants'
 import client from '@/api/client'
@@ -11,7 +11,9 @@ import type { UserInfo } from '@/api/types'
 export default function Register() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
+  const { message } = AntApp.useApp()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   // 邮箱密码注册
   const handleRegister = async (values: {
@@ -20,6 +22,7 @@ export default function Register() {
     password: string
     confirm: string
   }) => {
+    setError('')
     setLoading(true)
     try {
       const data = await client.post<unknown, { access_token: string; user: UserInfo }>(
@@ -30,8 +33,9 @@ export default function Register() {
       setAuth(data.access_token, data.user)
       message.success('注册成功')
       navigate('/')
-    } catch {
-      // 错误已由拦截器处理
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.detail || err?.response?.data?.message
+      setError(errMsg || '注册失败，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -60,7 +64,13 @@ export default function Register() {
         创建账号
       </Typography.Title>
 
-      <Form name="register" layout="vertical" onFinish={handleRegister} autoComplete="off">
+      <Form
+        name="register"
+        layout="vertical"
+        onFinish={handleRegister}
+        autoComplete="off"
+        onValuesChange={() => error && setError('')}
+      >
         <Form.Item
           name="username"
           label="用户名"
@@ -112,6 +122,17 @@ export default function Register() {
         >
           <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" size="large" />
         </Form.Item>
+
+        {error && (
+          <Alert
+            type="error"
+            message={error}
+            showIcon
+            closable
+            onClose={() => setError('')}
+            style={{ marginBottom: 16 }}
+          />
+        )}
 
         <Form.Item>
           <Button type="primary" htmlType="submit" block size="large" loading={loading}>

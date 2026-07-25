@@ -27,6 +27,19 @@ server {\n\
     location / {\n\
         try_files $uri $uri/ /index.html;\n\
     }\n\
+    # SEO：sitemap 和 robots 转发到后端动态生成\n\
+    location = /sitemap.xml {\n\
+        proxy_pass http://backend:8001;\n\
+        proxy_set_header Host $host;\n\
+        proxy_set_header X-Real-IP $remote_addr;\n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\
+    }\n\
+    location = /robots.txt {\n\
+        proxy_pass http://backend:8001;\n\
+        proxy_set_header Host $host;\n\
+        proxy_set_header X-Real-IP $remote_addr;\n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\
+    }\n\
     # API 代理到后端\n\
     location /api/ {\n\
         proxy_pass http://backend:8001;\n\

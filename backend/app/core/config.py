@@ -73,5 +73,9 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
 
+    # SEO 配置：sitemap.xml 和 robots.txt 使用的站点根域名
+    # 部署时必须改成真实域名（含 https://），不能用 localhost 或 IP
+    SITEMAP_BASE_URL: str = "https://rustpbx.dev"
+
 
 settings = Settings()

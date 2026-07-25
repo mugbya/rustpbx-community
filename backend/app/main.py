@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
+from app.api.v1 import seo
 from app.core.config import settings
 
 
@@ -52,6 +53,9 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+# SEO 路由挂在根路径（/sitemap.xml、/robots.txt），不加 /api/v1 前缀
+app.include_router(seo.router)
 
 
 @app.get("/")

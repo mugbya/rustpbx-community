@@ -1,5 +1,4 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
-import { message as staticMessage } from 'antd'
 import { API_BASE_URL, TOKEN_KEY } from '@/utils/constants'
 import { getMessage } from '@/utils/messageHolder'
 
@@ -12,9 +11,9 @@ const client: AxiosInstance = axios.create({
   },
 })
 
-// 获取 message 实例（优先用 App.useApp() 的实例，fallback 到静态方法）
+// 获取 message 实例（统一走 messageHolder 桥接）
 function msg() {
-  return getMessage() ?? staticMessage
+  return getMessage()
 }
 
 // 请求拦截器：自动携带 JWT token

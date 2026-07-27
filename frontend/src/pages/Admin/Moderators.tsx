@@ -1,22 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
-import {
-  Card,
-  Table,
-  Avatar,
-  Button,
-  Input,
-  Select,
-  Space,
-  message,
-  Popconfirm,
-  Typography,
-  Empty,
-} from 'antd'
-import { UserOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import { User as UserIcon, Search, Trash2 } from 'lucide-react'
+import { type ColumnDef } from '@tanstack/react-table'
 import { forumApi } from '@/api/forum'
 import client from '@/api/client'
 import type { Category } from '@/api/types'
+import { Card } from '@/components/ui/Card'
+import { Table } from '@/components/ui/Table'
+import { Avatar } from '@/components/ui/Avatar'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Space } from '@/components/ui/Space'
+import { Empty } from '@/components/ui/Empty'
+import { Title } from '@/components/ui/Typography'
+import { ConfirmButton } from '@/components/ui/ConfirmButton'
+import { message } from '@/components/ui/MessageProvider'
 
 // 分区选项
 const TOPIC_TYPE_OPTIONS = [
@@ -124,34 +122,63 @@ export default function AdminModerators() {
     }
   }
 
-  const columns: ColumnsType<Moderator> = [
+  const moderatorColumns: ColumnDef<Moderator>[] = [
     {
-      title: '版主',
-      dataIndex: 'username',
-      render: (_, record) => (
-        <Space>
-          <Avatar src={record.avatar} icon={<UserOutlined />} />
-          <div>
-            <div style={{ fontWeight: 500 }}>{record.username}</div>
-            <div style={{ fontSize: 12, color: '#999' }}>{record.email}</div>
-          </div>
-        </Space>
-      ),
+      id: 'username',
+      header: '版主',
+      cell: ({ row }) => {
+        const record = row.original
+        return (
+          <Space align="center">
+            <Avatar src={record.avatar} icon={<UserIcon className="h-4 w-4" />} />
+            <div>
+              <div className="font-medium">{record.username}</div>
+              <div className="text-xs text-gray-400">{record.email}</div>
+            </div>
+          </Space>
+        )
+      },
     },
     {
-      title: '操作',
-      width: 120,
-      render: (_, record) => (
-        <Popconfirm
+      id: 'actions',
+      header: '操作',
+      cell: ({ row }) => (
+        <ConfirmButton
           title="确定要移除该版主吗？"
-          onConfirm={() => handleRemove(record.user_id)}
           okText="确定"
-          cancelText="取消"
+          variant="danger"
+          onConfirm={() => handleRemove(row.original.user_id)}
         >
-          <Button size="small" danger icon={<DeleteOutlined />}>
-            移除
-          </Button>
-        </Popconfirm>
+          <span className="inline-flex items-center text-red-500">
+            <Trash2 className="h-3.5 w-3.5" />移除
+          </span>
+        </ConfirmButton>
+      ),
+    },
+  ]
+
+  const searchColumns: ColumnDef<SearchResult>[] = [
+    {
+      id: 'username',
+      header: '用户',
+      cell: ({ row }) => {
+        const record = row.original
+        return (
+          <Space align="center">
+            <Avatar size="small" src={record.avatar} icon={<UserIcon className="h-3.5 w-3.5" />} />
+            <span>{record.username}</span>
+            <span className="text-xs text-gray-400">{record.email}</span>
+          </Space>
+        )
+      },
+    },
+    {
+      id: 'actions',
+      header: '操作',
+      cell: ({ row }) => (
+        <Button size="small" variant="link" onClick={() => handleAdd(row.original)}>
+          设为版主
+        </Button>
       ),
     },
   ]
@@ -160,14 +187,14 @@ export default function AdminModerators() {
     <div>
       <Card>
         {/* 第一步：选择分区 */}
-        <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="mb-4 flex gap-3 items-center">
           <span>选择分区：</span>
           <Select
             placeholder="请选择分区"
-            style={{ width: 160 }}
+            className="w-40"
             value={selectedType}
             onChange={(v) => {
-              setSelectedType(v)
+              setSelectedType(v as string | undefined)
               setSearchResults([])
             }}
             options={TOPIC_TYPE_OPTIONS}
@@ -176,14 +203,14 @@ export default function AdminModerators() {
 
         {/* 第二步：选择板块 */}
         {selectedType && (
-          <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div className="mb-4 flex gap-3 items-center">
             <span>选择板块：</span>
             <Select
               placeholder="请选择板块"
-              style={{ width: 200 }}
+              className="w-52"
               value={selectedCategory}
               onChange={(v) => {
-                setSelectedCategory(v)
+                setSelectedCategory(v as number | undefined)
                 setSearchResults([])
               }}
               options={categories.map((c) => ({ label: c.name, value: c.id }))}
@@ -194,62 +221,42 @@ export default function AdminModerators() {
         {selectedCategory ? (
           <>
             {/* 当前版主列表 */}
-            <Typography.Title level={5}>当前版主</Typography.Title>
-            <Table
-              columns={columns}
-              dataSource={moderators}
-              rowKey="user_id"
-              loading={loading}
-              pagination={false}
-              locale={{ emptyText: <Empty description="暂无版主" /> }}
-              style={{ marginBottom: 24 }}
-            />
+            <Title level={5} className="mb-3">当前版主</Title>
+            <div className="mb-6">
+              {moderators.length === 0 && !loading ? (
+                <Empty description="暂无版主" />
+              ) : (
+                <Table
+                  columns={moderatorColumns}
+                  data={moderators}
+                  rowKey="user_id"
+                  loading={loading}
+                />
+              )}
+            </div>
 
             {/* 搜索用户添加版主 */}
-            <Typography.Title level={5}>添加版主</Typography.Title>
-            <Space style={{ marginBottom: 16 }}>
+            <Title level={5} className="mb-3">添加版主</Title>
+            <Space className="mb-4">
               <Input
                 placeholder="搜索用户名或邮箱"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onPressEnter={handleSearch}
-                style={{ width: 240 }}
-                prefix={<SearchOutlined />}
+                className="w-60"
+                prefix={<Search className="h-4 w-4" />}
                 allowClear
               />
-              <Button type="primary" onClick={handleSearch} loading={searching}>
+              <Button variant="primary" onClick={handleSearch} loading={searching}>
                 搜索
               </Button>
             </Space>
 
             {searchResults.length > 0 && (
               <Table
-                size="small"
-                columns={[
-                  {
-                    title: '用户',
-                    dataIndex: 'username',
-                    render: (_, record) => (
-                      <Space>
-                        <Avatar src={record.avatar} icon={<UserOutlined />} size="small" />
-                        <span>{record.username}</span>
-                        <span style={{ fontSize: 12, color: '#999' }}>{record.email}</span>
-                      </Space>
-                    ),
-                  },
-                  {
-                    title: '操作',
-                    width: 100,
-                    render: (_, record) => (
-                      <Button size="small" type="link" onClick={() => handleAdd(record)}>
-                        设为版主
-                      </Button>
-                    ),
-                  },
-                ]}
-                dataSource={searchResults}
+                columns={searchColumns}
+                data={searchResults}
                 rowKey="id"
-                pagination={false}
               />
             )}
           </>

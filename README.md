@@ -5,7 +5,7 @@ rustpbx 中文社区
 ## 技术栈
 
 - 后端：FastAPI + Python 3.13 + SQLAlchemy + Alembic
-- 前端：React + Vite + TypeScript + Ant Design + Zustand
+- 前端：React + Vite + TypeScript + Tailwind CSS + Headless UI + Zustand
 - 数据库：MySQL 8.0
 - 文件存储：腾讯云 COS
 - 部署：Docker Compose

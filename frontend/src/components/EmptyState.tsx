@@ -1,11 +1,11 @@
-import { Empty, Button, Typography } from 'antd'
-import type { ReactNode } from 'react'
+import { Empty } from '@/components/ui/Empty'
+import { Button } from '@/components/ui/Button'
 
 interface EmptyStateProps {
   // 描述文案
   description?: string
   // 自定义图标
-  image?: ReactNode
+  image?: React.ReactNode
   // 操作按钮文案
   actionText?: string
   // 操作按钮点击回调
@@ -20,16 +20,14 @@ export default function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <Empty
-      image={image ?? undefined}
-      imageStyle={{ height: 80 }}
-      description={<Typography.Text type="secondary">{description}</Typography.Text>}
-    >
+    <div className="flex flex-col items-center justify-center py-10">
+      {image ?? <Empty description={description} />}
+      {image && <span className="mt-3 text-sm text-gray-500">{description}</span>}
       {actionText && onAction && (
-        <Button type="primary" onClick={onAction}>
+        <Button variant="primary" className="mt-4" onClick={onAction}>
           {actionText}
         </Button>
       )}
-    </Empty>
+    </div>
   )
 }

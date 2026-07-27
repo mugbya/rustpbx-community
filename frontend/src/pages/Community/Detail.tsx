@@ -1,32 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import {
-  Card,
-  Avatar,
-  Typography,
-  Space,
-  Divider,
-  Button,
-  Input,
-  List,
-  Spin,
-  Pagination,
-  message,
-  Popconfirm,
-  Tag,
-} from 'antd'
-import {
-  ArrowLeftOutlined,
-  MessageOutlined,
-  EyeOutlined,
-  LikeOutlined,
-  DeleteOutlined,
-  EditOutlined,
-} from '@ant-design/icons'
+import { ArrowLeft, MessageSquare, Eye, ThumbsUp, Trash2, Pencil } from 'lucide-react'
 import dayjs from 'dayjs'
 import MarkdownRender from '@/components/MarkdownRender'
 import EmptyState from '@/components/EmptyState'
 import { communityApi, type CommunityPostDetail, type CommunityReply } from '@/api/community'
+import { Card } from '@/components/ui/Card'
+import { Avatar } from '@/components/ui/Avatar'
+import { Tag } from '@/components/ui/Tag'
+import { Space } from '@/components/ui/Space'
+import { Divider } from '@/components/ui/Divider'
+import { Button } from '@/components/ui/Button'
+import { Textarea } from '@/components/ui/Textarea'
+import { Spin } from '@/components/ui/Spin'
+import { Pagination } from '@/components/ui/Pagination'
+import { Title } from '@/components/ui/Typography'
+import { ConfirmButton } from '@/components/ui/ConfirmButton'
+import { message } from '@/components/ui/MessageProvider'
 
 const REPLY_PAGE_SIZE = 20
 
@@ -44,7 +34,6 @@ export default function CommunityDetail() {
   const [loadingReplies, setLoadingReplies] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   // 获取帖子详情
   useEffect(() => {
@@ -105,22 +94,19 @@ export default function CommunityDetail() {
 
   // 删除帖子
   const handleDelete = async () => {
-    setDeleting(true)
     try {
       await communityApi.deletePost(postId)
       message.success('删除成功')
       navigate('/community')
     } catch {
       // 错误已由拦截器处理
-    } finally {
-      setDeleting(false)
     }
   }
 
   // 加载中
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+      <div className="flex justify-center py-12">
         <Spin size="large" />
       </div>
     )
@@ -140,25 +126,25 @@ export default function CommunityDetail() {
   }
 
   return (
-    <Space direction="vertical" size={24} style={{ width: '100%' }}>
-      <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+    <div className="flex flex-col gap-6 w-full">
+      <Button onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-4 w-4" />
         返回
       </Button>
 
       {/* 帖子正文 */}
       <Card>
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
-          <Typography.Title level={3}>{post.title}</Typography.Title>
+        <div className="flex flex-col gap-4 w-full">
+          <Title level={3}>{post.title}</Title>
 
-          <Space split={<span>·</span>} wrap>
-            <Space>
-              <Avatar size="small" src={post.author.avatar}>
-                {post.author.username[0]}
-              </Avatar>
+          <div className="flex items-center gap-2 flex-wrap text-sm text-gray-500">
+            <Space align="center">
+              <Avatar size="small" src={post.author.avatar}>{post.author.username[0]}</Avatar>
               <span>{post.author.username}</span>
             </Space>
+            <span>·</span>
             <span>{dayjs(post.created_at).format('YYYY-MM-DD HH:mm')}</span>
-          </Space>
+          </div>
 
           <Divider />
 
@@ -167,32 +153,27 @@ export default function CommunityDetail() {
           <Divider />
 
           {/* 统计信息与操作按钮 */}
-          <Space split={<span>·</span>} wrap>
-            <Tag icon={<MessageOutlined />}>回复 {post.reply_count}</Tag>
-            <Tag icon={<EyeOutlined />}>浏览 {post.view_count}</Tag>
-            <Tag icon={<LikeOutlined />}>赞 {post.like_count}</Tag>
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => navigate(`/community/create?id=${post.id}`)}
-            >
-              编辑
+          <div className="flex items-center gap-2 flex-wrap">
+            <Tag><MessageSquare className="h-3 w-3 inline mr-0.5" />回复 {post.reply_count}</Tag>
+            <Tag><Eye className="h-3 w-3 inline mr-0.5" />浏览 {post.view_count}</Tag>
+            <Tag><ThumbsUp className="h-3 w-3 inline mr-0.5" />赞 {post.like_count}</Tag>
+            <Button variant="text" onClick={() => navigate(`/community/create?id=${post.id}`)}>
+              <Pencil className="h-4 w-4" />编辑
             </Button>
             {post.can_delete && (
-              <Popconfirm
-                title="确定要删除这个帖子吗？"
-                description="删除后无法恢复"
-                onConfirm={handleDelete}
+              <ConfirmButton
+                title="确定要删除这个帖子吗？删除后无法恢复"
                 okText="确定删除"
-                cancelText="取消"
+                variant="danger"
+                onConfirm={handleDelete}
               >
-                <Button type="text" danger icon={<DeleteOutlined />} loading={deleting}>
-                  删除
-                </Button>
-              </Popconfirm>
+                <span className="inline-flex items-center text-red-500">
+                  <Trash2 className="h-4 w-4" />删除
+                </span>
+              </ConfirmButton>
             )}
-          </Space>
-        </Space>
+          </div>
+        </div>
       </Card>
 
       {/* 回复列表 */}
@@ -203,27 +184,29 @@ export default function CommunityDetail() {
           <EmptyState description="暂无回复，快来抢沙发吧" />
         ) : (
           <>
-            <List
-              itemLayout="vertical"
-              dataSource={replies}
-              renderItem={(reply) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar src={reply.author.avatar}>{reply.author.username[0]}</Avatar>}
-                    title={
-                      <Space split={<span>·</span>}>
-                        <span>{reply.author.username}</span>
+            <ul className="divide-y divide-gray-100">
+              {replies.map((reply) => (
+                <li key={reply.id} className="py-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar src={reply.author.avatar}>{reply.author.username[0]}</Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span className="text-gray-700">{reply.author.username}</span>
+                        <span>·</span>
                         <span>#{reply.floor} 楼</span>
+                        <span>·</span>
                         <span>{dayjs(reply.created_at).format('YYYY-MM-DD HH:mm')}</span>
-                      </Space>
-                    }
-                    description={<MarkdownRender content={reply.content} />}
-                  />
-                </List.Item>
-              )}
-            />
+                      </div>
+                      <div className="mt-2">
+                        <MarkdownRender content={reply.content} />
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
             {repliesTotal > REPLY_PAGE_SIZE && (
-              <div style={{ textAlign: 'right', marginTop: 16 }}>
+              <div className="flex justify-end mt-4">
                 <Pagination
                   current={repliesPage}
                   total={repliesTotal}
@@ -239,18 +222,18 @@ export default function CommunityDetail() {
 
       {/* 回复输入框 */}
       <Card title="发表回复">
-        <Input.TextArea
+        <Textarea
           rows={4}
           value={replyContent}
           onChange={(e) => setReplyContent(e.target.value)}
           placeholder="请输入回复内容（支持 Markdown）"
         />
-        <div style={{ marginTop: 16, textAlign: 'right' }}>
-          <Button type="primary" onClick={handleSubmitReply} loading={submitting}>
+        <div className="mt-4 flex justify-end">
+          <Button variant="primary" onClick={handleSubmitReply} loading={submitting}>
             发表回复
           </Button>
         </div>
       </Card>
-    </Space>
+    </div>
   )
 }

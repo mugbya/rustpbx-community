@@ -29,10 +29,6 @@ export default defineConfig({
                 manualChunks: {
                     // React 核心：react + react-dom + react-router
                     'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-                    // antd 组件库（占大头，单独拆出）
-                    antd: ['antd'],
-                    // 图标库单独成包，避免与 antd 混在一起导致缓存互相失效
-                    icons: ['@ant-design/icons'],
                 },
             },
         },

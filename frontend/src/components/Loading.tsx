@@ -1,4 +1,4 @@
-import { Spin } from 'antd'
+import { Spin } from '@/components/ui/Spin'
 
 interface LoadingProps {
   // 提示文案
@@ -11,25 +11,17 @@ interface LoadingProps {
 export default function Loading({ tip = '加载中...', fullscreen = false }: LoadingProps) {
   if (fullscreen) {
     return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(255, 255, 255, 0.6)',
-          zIndex: 1000,
-        }}
-      >
-        <Spin tip={tip} size="large" />
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 bg-white/60 z-[1000]">
+        <Spin size="large" />
+        <span className="text-sm text-gray-500">{tip}</span>
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
-      <Spin tip={tip} size="large" />
+    <div className="flex flex-col items-center justify-center gap-3 py-12">
+      <Spin size="large" />
+      <span className="text-sm text-gray-500">{tip}</span>
     </div>
   )
 }

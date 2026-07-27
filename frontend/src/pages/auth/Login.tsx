@@ -1,22 +1,43 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Divider, Typography, Alert, App as AntApp } from 'antd'
-import { MailOutlined, LockOutlined, GithubOutlined } from '@ant-design/icons'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Mail, Lock } from 'lucide-react'
+import { Github } from '@/components/ui/icons/Github'
 import { useAuthStore } from '@/store/auth'
 import { GITHUB_AUTHORIZE_URL } from '@/utils/constants'
 import client from '@/api/client'
 import type { UserInfo } from '@/api/types'
+import { Input, InputPassword } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { Divider } from '@/components/ui/Divider'
+import { Alert } from '@/components/ui/Alert'
+import { FormItem } from '@/components/ui/FormItem'
+import { Title, Text } from '@/components/ui/Typography'
+import { message } from '@/components/ui/MessageProvider'
+
+const schema = z.object({
+  email: z.string().min(1, '请输入邮箱').email('请输入有效的邮箱地址'),
+  password: z.string().min(1, '请输入密码'),
+})
+type FormValues = z.infer<typeof schema>
 
 // 登录页：邮箱密码 + GitHub OAuth
 export default function Login() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
-  const { message } = AntApp.useApp()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({ resolver: zodResolver(schema) })
+
   // 邮箱密码登录
-  const handleLogin = async (values: { email: string; password: string }) => {
+  const handleLogin = async (values: FormValues) => {
     setError('')
     setLoading(true)
     try {
@@ -54,70 +75,44 @@ export default function Login() {
 
   return (
     <div>
-      <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
+      <Title level={3} className="text-center mb-8">
         欢迎回来
-      </Typography.Title>
+      </Title>
 
-      <Form
-        name="login"
-        layout="vertical"
-        onFinish={handleLogin}
-        autoComplete="off"
-        onValuesChange={() => error && setError('')}
-      >
-        <Form.Item
-          name="email"
-          label="邮箱"
-          rules={[
-            { required: true, message: '请输入邮箱' },
-            { type: 'email', message: '请输入有效的邮箱地址' },
-          ]}
-        >
-          <Input prefix={<MailOutlined />} placeholder="请输入邮箱" size="large" />
-        </Form.Item>
+      <form onSubmit={handleSubmit(handleLogin)} autoComplete="off" onChange={() => error && setError('')}>
+        <FormItem label="邮箱" error={errors.email?.message} required>
+          <Input size="large" prefix={<Mail className="h-4 w-4" />} placeholder="请输入邮箱" {...register('email')} />
+        </FormItem>
 
-        <Form.Item
-          name="password"
-          label="密码"
-          rules={[{ required: true, message: '请输入密码' }]}
-        >
-          <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" size="large" />
-        </Form.Item>
+        <FormItem label="密码" error={errors.password?.message} required>
+          <InputPassword size="large" prefix={<Lock className="h-4 w-4" />} placeholder="请输入密码" {...register('password')} />
+        </FormItem>
 
         {error && (
-          <Alert
-            type="error"
-            message={error}
-            showIcon
-            closable
-            onClose={() => setError('')}
-            style={{ marginBottom: 16 }}
-          />
+          <Alert type="error" message={error} closable onClose={() => setError('')} className="mb-4" />
         )}
 
-        <Form.Item>
-          <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-            登录
-          </Button>
-        </Form.Item>
-      </Form>
+        <Button type="submit" variant="primary" block size="large" loading={loading}>
+          登录
+        </Button>
+      </form>
 
       <Divider plain>或</Divider>
 
       <Button
         block
         size="large"
-        icon={<GithubOutlined />}
         onClick={handleGitHubLogin}
-        style={{ background: '#24292e', color: '#fff', borderColor: '#24292e' }}
+        className="bg-[#24292e] text-white border-[#24292e] hover:bg-[#24292e]"
       >
+        <Github className="h-4 w-4" />
         使用 GitHub 登录
       </Button>
 
-      <div style={{ textAlign: 'center', marginTop: 24 }}>
-        <Typography.Text type="secondary">
-          还没有账号？ <Link to="/register">立即注册</Link>
-        </Typography.Text>
+      <div className="text-center mt-6">
+        <Text type="secondary">
+          还没有账号？ <Link to="/register" className="text-primary-600 hover:underline">立即注册</Link>
+        </Text>
       </div>
     </div>
   )

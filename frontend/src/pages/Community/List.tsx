@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, List, Avatar, Space, Button, Input, Pagination, Spin } from 'antd'
-import { PlusOutlined, MessageOutlined, EyeOutlined, LikeOutlined } from '@ant-design/icons'
+import { Plus, MessageSquare, Eye, ThumbsUp, Search } from 'lucide-react'
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { communityApi } from '@/api/community'
 import type { CommunityPostItem } from '@/api/community'
+import { Card } from '@/components/ui/Card'
+import { Avatar } from '@/components/ui/Avatar'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Spin } from '@/components/ui/Spin'
+import { Pagination } from '@/components/ui/Pagination'
 
 const PAGE_SIZE = 20
 
@@ -16,6 +21,7 @@ export default function CommunityList() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [keyword, setKeyword] = useState<string | undefined>(undefined)
+  const [searchValue, setSearchValue] = useState('')
   const [loading, setLoading] = useState(false)
 
   // 获取帖子列表
@@ -32,26 +38,30 @@ export default function CommunityList() {
   }, [keyword, page])
 
   // 搜索：重置页码
-  const handleSearch = (value: string) => {
-    setKeyword(value || undefined)
+  const handleSearch = () => {
+    setKeyword(searchValue || undefined)
     setPage(1)
   }
 
   return (
-    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+    <div className="flex flex-col gap-6 w-full">
       {/* 搜索栏与发帖按钮 */}
       <Card>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Input.Search
+        <div className="flex items-center justify-between gap-3">
+          <Input
             placeholder="搜索帖子标题"
             allowClear
-            onSearch={handleSearch}
-            style={{ width: 300 }}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onPressEnter={handleSearch}
+            prefix={<Search className="h-4 w-4" />}
+            className="max-w-[300px]"
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/community/create')}>
+          <Button variant="primary" onClick={() => navigate('/community/create')}>
+            <Plus className="h-4 w-4" />
             发帖
           </Button>
-        </Space>
+        </div>
       </Card>
 
       {/* 帖子列表 */}
@@ -66,31 +76,32 @@ export default function CommunityList() {
           />
         ) : (
           <>
-            <List
-              itemLayout="horizontal"
-              dataSource={posts}
-              renderItem={(item) => (
-                <List.Item
-                  style={{ cursor: 'pointer' }}
+            <ul className="divide-y divide-gray-100">
+              {posts.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-start gap-3 py-3 cursor-pointer"
                   onClick={() => navigate(`/community/detail/${item.id}`)}
                 >
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.author.avatar}>{item.author.username[0]}</Avatar>}
-                    title={<span>{item.title}</span>}
-                    description={
-                      <Space split={<span>·</span>}>
-                        <span>{item.author.username}</span>
-                        <span><MessageOutlined /> {item.reply_count}</span>
-                        <span><EyeOutlined /> {item.view_count}</span>
-                        <span><LikeOutlined /> {item.like_count}</span>
-                        <span>{dayjs(item.created_at).format('MM-DD HH:mm')}</span>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-            <div style={{ textAlign: 'right', marginTop: 16 }}>
+                  <Avatar src={item.author.avatar}>{item.author.username[0]}</Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-gray-800">{item.title}</div>
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+                      <span>{item.author.username}</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-0.5"><MessageSquare className="h-3 w-3" /> {item.reply_count}</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-0.5"><Eye className="h-3 w-3" /> {item.view_count}</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-0.5"><ThumbsUp className="h-3 w-3" /> {item.like_count}</span>
+                      <span>·</span>
+                      <span>{dayjs(item.created_at).format('MM-DD HH:mm')}</span>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end mt-4">
               <Pagination
                 current={page}
                 total={total}
@@ -102,6 +113,6 @@ export default function CommunityList() {
           </>
         )}
       </Card>
-    </Space>
+    </div>
   )
 }

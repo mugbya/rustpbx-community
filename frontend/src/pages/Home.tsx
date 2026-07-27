@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Row, Col, Card, List, Tag, Avatar, Typography, Space, Statistic, Spin } from 'antd'
 import {
-  MessageOutlined,
-  QuestionCircleOutlined,
-  FileTextOutlined,
-  CloudDownloadOutlined,
-  FireOutlined,
-  TeamOutlined,
-  EyeOutlined,
-} from '@ant-design/icons'
+  MessageSquare,
+  HelpCircle,
+  FileText,
+  CloudDownload,
+  Flame,
+  Users,
+  Eye,
+} from 'lucide-react'
 import dayjs from 'dayjs'
 import client from '@/api/client'
 import { forumApi } from '@/api/forum'
 import type { ForumStats, TopicListItem } from '@/api/types'
 import EmptyState from '@/components/EmptyState'
+import { Card } from '@/components/ui/Card'
+import { Tag } from '@/components/ui/Tag'
+import { Avatar } from '@/components/ui/Avatar'
+import { Space } from '@/components/ui/Space'
+import { Statistic } from '@/components/ui/Statistic'
+import { Spin } from '@/components/ui/Spin'
 
 // 首页：社区概览、最新帖子、热门话题
 export default function Home() {
@@ -39,84 +44,58 @@ export default function Home() {
 
   // 快捷入口配置
   const shortcuts = [
-    { icon: <MessageOutlined />, title: '论坛', desc: '交流讨论，分享经验', color: '#ce422b', path: '/forum' },
-    { icon: <QuestionCircleOutlined />, title: '问答', desc: '提问解答，互帮互助', color: '#fa8c16', path: '/qa' },
-    { icon: <FileTextOutlined />, title: '文章', desc: '技术文章，深度分享', color: '#52c41a', path: '/articles' },
-    { icon: <CloudDownloadOutlined />, title: '资源', desc: '工具资源，一键下载', color: '#1677ff', path: '/resources' },
+    { icon: <MessageSquare className="h-5 w-5" />, title: '论坛', desc: '交流讨论，分享经验', color: '#ce422b', path: '/forum' },
+    { icon: <HelpCircle className="h-5 w-5" />, title: '问答', desc: '提问解答，互帮互助', color: '#fa8c16', path: '/qa' },
+    { icon: <FileText className="h-5 w-5" />, title: '文章', desc: '技术文章，深度分享', color: '#52c41a', path: '/articles' },
+    { icon: <CloudDownload className="h-5 w-5" />, title: '资源', desc: '工具资源，一键下载', color: '#1677ff', path: '/resources' },
   ]
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+      <div className="flex justify-center py-12">
         <Spin size="large" />
       </div>
     )
   }
 
   return (
-    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+    <div className="flex flex-col gap-6 w-full">
       {/* 社区概览统计 */}
-      <Row gutter={16}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="话题"
-              value={stats?.discussion_count ?? 0}
-              prefix={<MessageOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="问答"
-              value={stats?.question_count ?? 0}
-              prefix={<QuestionCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="文章"
-              value={stats?.article_count ?? 0}
-              prefix={<FileTextOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="成员"
-              value={stats?.user_count ?? 0}
-              prefix={<TeamOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <Statistic title="话题" value={stats?.discussion_count ?? 0} prefix={<MessageSquare className="h-4 w-4 text-gray-400" />} />
+        </Card>
+        <Card>
+          <Statistic title="问答" value={stats?.question_count ?? 0} prefix={<HelpCircle className="h-4 w-4 text-gray-400" />} />
+        </Card>
+        <Card>
+          <Statistic title="文章" value={stats?.article_count ?? 0} prefix={<FileText className="h-4 w-4 text-gray-400" />} />
+        </Card>
+        <Card>
+          <Statistic title="成员" value={stats?.user_count ?? 0} prefix={<Users className="h-4 w-4 text-gray-400" />} />
+        </Card>
+      </div>
 
       {/* 快捷入口 */}
-      <Row gutter={16}>
+      <div className="grid grid-cols-4 gap-4">
         {shortcuts.map((item) => (
-          <Col span={6} key={item.title}>
-            <Card hoverable onClick={() => navigate(item.path)}>
-              <Card.Meta
-                avatar={
-                  <Avatar style={{ background: item.color }} icon={item.icon} />
-                }
-                title={item.title}
-                description={item.desc}
-              />
-            </Card>
-          </Col>
+          <Card key={item.title} onClick={() => navigate(item.path)}>
+            <div className="flex items-center gap-3">
+              <Avatar size={40} icon={<span style={{ color: item.color }}>{item.icon}</span>} />
+              <div>
+                <div className="font-medium text-gray-800">{item.title}</div>
+                <div className="text-xs text-gray-400">{item.desc}</div>
+              </div>
+            </div>
+          </Card>
         ))}
-      </Row>
+      </div>
 
       {/* 热门话题 */}
       <Card
         title={
-          <Space>
-            <FireOutlined style={{ color: '#ce422b' }} />
+          <Space align="center">
+            <Flame className="h-4 w-4 text-primary-600" />
             <span>热门话题</span>
           </Space>
         }
@@ -124,42 +103,38 @@ export default function Home() {
         {hotTopics.length === 0 ? (
           <EmptyState description="暂无话题，快来发布第一个吧" />
         ) : (
-          <List
-            itemLayout="horizontal"
-            dataSource={hotTopics}
-            renderItem={(topic) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={
-                    <Avatar src={topic.author.avatar}>
-                      {topic.author.username[0]}
-                    </Avatar>
-                  }
-                  title={
-                    <Space>
-                      {topic.is_pinned && <Tag color="red">置顶</Tag>}
-                      {topic.is_essential && <Tag color="gold">精华</Tag>}
-                      <Typography.Link onClick={() => navigate(`/forum/topic/${topic.id}`)}>
-                        {topic.title}
-                      </Typography.Link>
-                    </Space>
-                  }
-                  description={
-                    <Space split={<span>·</span>}>
-                      <span>{topic.author.username}</span>
-                      <span>{topic.reply_count} 回复</span>
-                      <span>
-                        <EyeOutlined /> {topic.view_count}
-                      </span>
-                      <span>{dayjs(topic.created_at).format('YYYY-MM-DD')}</span>
-                    </Space>
-                  }
-                />
-              </List.Item>
-            )}
-          />
+          <ul className="divide-y divide-gray-100">
+            {hotTopics.map((topic) => (
+              <li key={topic.id} className="flex items-start gap-3 py-3">
+                <Avatar src={topic.author.avatar}>{topic.author.username[0]}</Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {topic.is_pinned && <Tag color="red">置顶</Tag>}
+                    {topic.is_essential && <Tag color="gold">精华</Tag>}
+                    <button
+                      className="text-primary-600 hover:underline text-left"
+                      onClick={() => navigate(`/forum/topic/${topic.id}`)}
+                    >
+                      {topic.title}
+                    </button>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+                    <span>{topic.author.username}</span>
+                    <span>·</span>
+                    <span>{topic.reply_count} 回复</span>
+                    <span>·</span>
+                    <span className="inline-flex items-center gap-0.5">
+                      <Eye className="h-3 w-3" /> {topic.view_count}
+                    </span>
+                    <span>·</span>
+                    <span>{dayjs(topic.created_at).format('YYYY-MM-DD')}</span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
-    </Space>
+    </div>
   )
 }

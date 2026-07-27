@@ -1,26 +1,27 @@
 import { useState, Suspense, type ReactNode } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Dropdown, Avatar, Space, Typography, Button } from 'antd'
 import {
-  HomeOutlined,
-  MessageOutlined,
-  QuestionCircleOutlined,
-  FileTextOutlined,
-  CloudDownloadOutlined,
-  BugOutlined,
-  BookOutlined,
-  UserOutlined,
-  LogoutOutlined,
-  LoginOutlined,
-  EditOutlined,
-  TeamOutlined,
-  GithubOutlined,
-} from '@ant-design/icons'
+  Home,
+  MessageSquare,
+  HelpCircle,
+  FileText,
+  CloudDownload,
+  Bug,
+  BookOpen,
+  User,
+  LogOut,
+  LogIn,
+  SquarePen,
+  Users,
+  Menu as MenuIcon,
+} from 'lucide-react'
+import { Github } from '@/components/ui/icons/Github'
 import { useAuthStore } from '@/store/auth'
 import Loading from '@/components/Loading'
+import { Avatar } from '@/components/ui/Avatar'
+import { Button } from '@/components/ui/Button'
+import { Dropdown, type DropdownItem } from '@/components/ui/Dropdown'
 import { NAV_MENU_ITEMS, DOCS_URL, GITHUB_REPO_URL } from '@/utils/constants'
-
-const { Header, Content, Sider } = Layout
 
 // 主布局：顶部导航栏 + 侧边栏 + 内容区
 export default function MainLayout() {
@@ -31,32 +32,33 @@ export default function MainLayout() {
 
   // 导航菜单图标映射
   const iconMap: Record<string, ReactNode> = {
-    '/': <HomeOutlined />,
-    '/forum': <MessageOutlined />,
-    '/qa': <QuestionCircleOutlined />,
-    '/articles': <FileTextOutlined />,
-    '/resources': <CloudDownloadOutlined />,
-    '/community': <BugOutlined />,
-    '/admin/users': <TeamOutlined />,
-    docs: <BookOutlined />,
+    '/': <Home className="h-4 w-4" />,
+    '/forum': <MessageSquare className="h-4 w-4" />,
+    '/qa': <HelpCircle className="h-4 w-4" />,
+    '/articles': <FileText className="h-4 w-4" />,
+    '/resources': <CloudDownload className="h-4 w-4" />,
+    '/community': <Bug className="h-4 w-4" />,
+    '/admin/users': <Users className="h-4 w-4" />,
+    docs: <BookOpen className="h-4 w-4" />,
   }
 
   // 当前选中菜单项
   const selectedKey = location.pathname.startsWith('/admin')
     ? '/admin'
-    : NAV_MENU_ITEMS.find((item) => item.key !== 'docs' && location.pathname.startsWith(item.key) && item.key !== '/')?.key ??
-      (location.pathname === '/' ? '/' : '')
+    : NAV_MENU_ITEMS.find(
+        (item) => item.key !== 'docs' && item.key !== '/' && location.pathname.startsWith(item.key),
+      )?.key ?? (location.pathname === '/' ? '/' : '')
 
   // 侧边栏快捷菜单
   const siderMenuItems = [
-    { key: '/', icon: <HomeOutlined />, label: '首页' },
-    { key: '/forum', icon: <MessageOutlined />, label: '论坛' },
-    { key: '/qa', icon: <QuestionCircleOutlined />, label: '问答' },
-    { key: '/articles', icon: <FileTextOutlined />, label: '文章' },
-    { key: '/resources', icon: <CloudDownloadOutlined />, label: '资源' },
-    { key: '/community', icon: <BugOutlined />, label: '社区建设' },
+    { key: '/', icon: <Home className="h-4 w-4" />, label: '首页' },
+    { key: '/forum', icon: <MessageSquare className="h-4 w-4" />, label: '论坛' },
+    { key: '/qa', icon: <HelpCircle className="h-4 w-4" />, label: '问答' },
+    { key: '/articles', icon: <FileText className="h-4 w-4" />, label: '文章' },
+    { key: '/resources', icon: <CloudDownload className="h-4 w-4" />, label: '资源' },
+    { key: '/community', icon: <Bug className="h-4 w-4" />, label: '社区建设' },
     ...(user?.role === 'admin'
-      ? [{ key: '/admin', icon: <TeamOutlined />, label: '管理后台' }]
+      ? [{ key: '/admin', icon: <Users className="h-4 w-4" />, label: '管理后台' }]
       : []),
   ]
 
@@ -72,11 +74,11 @@ export default function MainLayout() {
   }
 
   // 发帖下拉菜单选项
-  const createMenuItems = [
-    { key: 'discussion', icon: <MessageOutlined />, label: '发讨论帖' },
-    { key: 'question', icon: <QuestionCircleOutlined />, label: '提问题' },
-    { key: 'article', icon: <FileTextOutlined />, label: '写文章' },
-    { key: 'resource', icon: <CloudDownloadOutlined />, label: '传资源' },
+  const createMenuItems: DropdownItem[] = [
+    { key: 'discussion', label: '发讨论帖', icon: <MessageSquare className="h-4 w-4" /> },
+    { key: 'question', label: '提问题', icon: <HelpCircle className="h-4 w-4" /> },
+    { key: 'article', label: '写文章', icon: <FileText className="h-4 w-4" /> },
+    { key: 'resource', label: '传资源', icon: <CloudDownload className="h-4 w-4" /> },
   ]
 
   // 处理发帖点击：未登录跳转登录页
@@ -89,17 +91,17 @@ export default function MainLayout() {
   }
 
   // 用户下拉菜单
-  const userMenuItems = [
+  const userMenuItems: DropdownItem[] = [
     {
       key: 'profile',
-      icon: <UserOutlined />,
       label: '个人中心',
+      icon: <User className="h-4 w-4" />,
       onClick: () => navigate('/user/profile'),
     },
     {
       key: 'logout',
-      icon: <LogoutOutlined />,
       label: '退出登录',
+      icon: <LogOut className="h-4 w-4" />,
       onClick: () => {
         logout()
         navigate('/login')
@@ -108,77 +110,58 @@ export default function MainLayout() {
   ]
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <div className="min-h-screen flex flex-col">
       {/* 顶部导航栏 */}
-      <Header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 24px',
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}
-      >
+      <header className="sticky top-0 z-10 flex items-center px-6 h-16 bg-white border-b border-gray-200">
         {/* Logo */}
         <div
-          style={{ cursor: 'pointer', marginRight: 32, display: 'flex', alignItems: 'center' }}
+          className="cursor-pointer mr-8 flex items-center"
           onClick={() => navigate('/')}
         >
-          <Space>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: '#ce422b',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: 16,
-              }}
-            >
-              R
-            </div>
-            <Typography.Title level={4} style={{ margin: 0, color: '#ce422b' }}>
-              RustPBX
-            </Typography.Title>
-          </Space>
+          <div className="w-8 h-8 rounded-lg bg-primary-600 text-white flex items-center justify-center font-bold text-base">
+            R
+          </div>
+          <span className="ml-2 text-lg font-semibold text-primary-600">RustPBX</span>
         </div>
 
         {/* 顶部导航菜单 */}
-        <Menu
-          mode="horizontal"
-          selectedKeys={selectedKey ? [selectedKey] : []}
-          style={{ flex: 1, borderBottom: 'none' }}
-          items={[
-            ...NAV_MENU_ITEMS.filter((item) => item.key !== 'docs').map((item) => ({
-              key: item.key,
-              icon: iconMap[item.key],
-              label: item.label,
-            })),
-            ...(user?.role === 'admin'
-              ? [{ key: '/admin', icon: <TeamOutlined />, label: '管理后台' }]
-              : []),
-            { key: 'docs', icon: <BookOutlined />, label: '文档' },
-            { key: 'github', icon: <GithubOutlined />, label: 'GitHub' },
-          ]}
-          onClick={({ key }) => handleMenuClick(key)}
-        />
+        <nav className="flex-1 flex items-center gap-1">
+          {NAV_MENU_ITEMS.filter((item) => item.key !== 'docs').map((item) => (
+            <NavBtn
+              key={item.key}
+              active={selectedKey === item.key}
+              icon={iconMap[item.key]}
+              label={item.label}
+              onClick={() => handleMenuClick(item.key)}
+            />
+          ))}
+          {user?.role === 'admin' && (
+            <NavBtn
+              active={selectedKey === '/admin'}
+              icon={<Users className="h-4 w-4" />}
+              label="管理后台"
+              onClick={() => navigate('/admin')}
+            />
+          )}
+          <NavBtn
+            icon={<BookOpen className="h-4 w-4" />}
+            label="文档"
+            onClick={() => handleMenuClick('docs')}
+          />
+          <NavBtn
+            icon={<Github className="h-4 w-4" />}
+            label="GitHub"
+            onClick={() => handleMenuClick('github')}
+          />
+        </nav>
 
         {/* 发帖下拉菜单 */}
         <Dropdown
-          menu={{
-            items: createMenuItems,
-            onClick: ({ key }) => handleCreate(key),
-          }}
+          menu={{ items: createMenuItems, onClick: (key) => handleCreate(key) }}
           placement="bottomRight"
         >
-          <Button type="primary" icon={<EditOutlined />} style={{ marginRight: 16 }}>
+          <Button variant="primary" className="mr-4">
+            <SquarePen className="h-4 w-4" />
             发帖
           </Button>
         </Dropdown>
@@ -186,44 +169,112 @@ export default function MainLayout() {
         {/* 用户菜单 */}
         {user ? (
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <Space style={{ cursor: 'pointer' }}>
-              <Avatar size="small" src={user.avatar} icon={<UserOutlined />} />
-              <span>{user.username}</span>
-            </Space>
+            <span className="inline-flex items-center gap-1.5 cursor-pointer">
+              <Avatar size="small" src={user.avatar} icon={<User className="h-4 w-4" />} />
+              <span className="text-sm text-gray-700">{user.username}</span>
+            </span>
           </Dropdown>
         ) : (
-          <Button type="primary" icon={<LoginOutlined />} onClick={() => navigate('/login')}>
+          <Button variant="primary" onClick={() => navigate('/login')}>
+            <LogIn className="h-4 w-4" />
             登录
           </Button>
         )}
-      </Header>
+      </header>
 
-      <Layout>
+      <div className="flex flex-1">
         {/* 侧边栏 */}
-        <Sider
-          collapsible
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
-          width={200}
-          theme="light"
-          style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}
+        <aside
+          className={`bg-white border-r border-gray-200 transition-all duration-200 ${
+            collapsed ? 'w-16' : 'w-[200px]'
+          }`}
         >
-          <Menu
-            mode="inline"
-            selectedKeys={selectedKey ? [selectedKey] : []}
-            style={{ borderRight: 'none', paddingTop: 16 }}
-            items={siderMenuItems}
-            onClick={({ key }) => navigate(key)}
-          />
-        </Sider>
+          <button
+            className="w-full flex items-center justify-center py-3 text-gray-400 hover:text-primary-600"
+            onClick={() => setCollapsed((c) => !c)}
+          >
+            <MenuIcon className="h-4 w-4" />
+          </button>
+          <nav className="pt-2">
+            {siderMenuItems.map((item) => (
+              <SiderBtn
+                key={item.key}
+                active={selectedKey === item.key}
+                icon={item.icon}
+                label={item.label}
+                collapsed={collapsed}
+                onClick={() => navigate(item.key)}
+              />
+            ))}
+          </nav>
+        </aside>
 
         {/* 内容区 */}
-        <Content style={{ padding: 24, background: '#f5f5f5' }}>
+        <main className="flex-1 p-6 bg-gray-50">
           <Suspense fallback={<Loading />}>
             <Outlet />
           </Suspense>
-        </Content>
-      </Layout>
-    </Layout>
+        </main>
+      </div>
+    </div>
+  )
+}
+
+// 顶部导航按钮
+function NavBtn({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active?: boolean
+  icon: ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-3 h-10 text-sm rounded transition-colors border-b-2 ${
+        active
+          ? 'border-primary-600 text-primary-600 font-medium'
+          : 'border-transparent text-gray-600 hover:text-primary-600'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  )
+}
+
+// 侧边栏按钮
+function SiderBtn({
+  active,
+  icon,
+  label,
+  collapsed,
+  onClick,
+}: {
+  active?: boolean
+  icon: ReactNode
+  label: string
+  collapsed: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors ${
+        collapsed ? 'justify-center' : ''
+      } ${
+        active
+          ? 'bg-primary-50 text-primary-600 font-medium border-r-2 border-primary-600'
+          : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
+      }`}
+    >
+      {icon}
+      {!collapsed && <span>{label}</span>}
+    </button>
   )
 }

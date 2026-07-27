@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Spin, Result } from 'antd'
+import { Spin } from '@/components/ui/Spin'
+import { Result } from '@/components/ui/Result'
 import { useAuthStore } from '@/store/auth'
 
 // GitHub OAuth 回调页：从 URL 获取 code，发送到后端完成登录
@@ -44,7 +45,7 @@ export default function GitHubCallback() {
 
   if (error) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div className="flex justify-center items-center h-screen">
         <Result
           status="error"
           title="GitHub 登录失败"
@@ -55,8 +56,9 @@ export default function GitHubCallback() {
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <Spin size="large" tip="正在登录..." />
+    <div className="flex flex-col justify-center items-center gap-3 h-screen">
+      <Spin size="large" />
+      <span className="text-sm text-gray-500">正在登录...</span>
     </div>
   )
 }

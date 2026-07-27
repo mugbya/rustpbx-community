@@ -1,42 +1,37 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Card,
-  Avatar,
-  Typography,
-  Space,
-  Tag,
-  Divider,
-  Button,
-  Input,
-  List,
-  Spin,
-  Pagination,
-  message,
-  Popconfirm,
-} from 'antd'
-import {
-  ArrowLeftOutlined,
-  LikeOutlined,
-  LikeFilled,
-  MessageOutlined,
-  EyeOutlined,
-  StarOutlined,
-  StarFilled,
-  DeleteOutlined,
-  DownloadOutlined,
-  LockOutlined,
-  EditOutlined,
-  PushpinOutlined,
-  TrophyOutlined,
-  CheckCircleOutlined,
-} from '@ant-design/icons'
+  ArrowLeft,
+  ThumbsUp,
+  MessageSquare,
+  Eye,
+  Star,
+  Trash2,
+  Download,
+  Lock,
+  Pencil,
+  Pin,
+  Trophy,
+  CheckCircle,
+} from 'lucide-react'
 import dayjs from 'dayjs'
 import MarkdownRender from '@/components/MarkdownRender'
 import EmptyState from '@/components/EmptyState'
 import { forumApi, interactionApi, qaApi } from '@/api/forum'
 import { useAuthStore } from '@/store/auth'
 import type { TopicDetail, Post, Category } from '@/api/types'
+import { Card } from '@/components/ui/Card'
+import { Avatar } from '@/components/ui/Avatar'
+import { Tag } from '@/components/ui/Tag'
+import { Space } from '@/components/ui/Space'
+import { Divider } from '@/components/ui/Divider'
+import { Button } from '@/components/ui/Button'
+import { Textarea } from '@/components/ui/Textarea'
+import { Spin } from '@/components/ui/Spin'
+import { Pagination } from '@/components/ui/Pagination'
+import { Title, Text } from '@/components/ui/Typography'
+import { ConfirmButton } from '@/components/ui/ConfirmButton'
+import { message } from '@/components/ui/MessageProvider'
 
 const POST_PAGE_SIZE = 20
 
@@ -66,7 +61,6 @@ export default function TopicDetail() {
   const [favoriteCount, setFavoriteCount] = useState(0)
   const [replyContent, setReplyContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [deleting, setDeleting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
 
   // 获取板块列表（用于显示帖子所属板块）
@@ -171,15 +165,12 @@ export default function TopicDetail() {
 
   // 删除帖子
   const handleDelete = async () => {
-    setDeleting(true)
     try {
       await forumApi.deleteTopic(topicId)
       message.success('删除成功')
       navigate('/forum')
     } catch {
       // 错误已由拦截器处理
-    } finally {
-      setDeleting(false)
     }
   }
 
@@ -235,7 +226,7 @@ export default function TopicDetail() {
   // 加载中
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+      <div className="flex justify-center py-12">
         <Spin size="large" />
       </div>
     )
@@ -260,40 +251,40 @@ export default function TopicDetail() {
   const canEdit = user && user.id === topic.author.id
 
   return (
-    <Space direction="vertical" size={24} style={{ width: '100%' }}>
-      <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+    <div className="flex flex-col gap-6 w-full">
+      <Button onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-4 w-4" />
         返回
       </Button>
 
       {/* 帖子正文 */}
       <Card>
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
-          <Typography.Title level={3}>{topic.title}</Typography.Title>
+        <div className="flex flex-col gap-4 w-full">
+          <Title level={3}>{topic.title}</Title>
 
-          <Space split={<span>·</span>} wrap>
-            <Space>
-              <Avatar size="small" src={topic.author.avatar}>
-                {topic.author.username[0]}
-              </Avatar>
+          <div className="flex items-center gap-2 flex-wrap text-sm text-gray-500">
+            <Space align="center">
+              <Avatar size="small" src={topic.author.avatar}>{topic.author.username[0]}</Avatar>
               <span>{topic.author.username}</span>
             </Space>
+            <span>·</span>
             {topic.is_pinned && <Tag color="red">置顶</Tag>}
             {topic.is_essential && <Tag color="gold">精华</Tag>}
-            {topic.is_solved && <Tag color="success">已解决</Tag>}
-            {topic.is_locked && <Tag icon={<LockOutlined />}>已锁定</Tag>}
+            {topic.is_solved && <Tag color="green">已解决</Tag>}
+            {topic.is_locked && <Tag><Lock className="h-3 w-3 inline mr-0.5" />已锁定</Tag>}
             {topic.category_id && (() => {
               const cat = categories.find((c) => c.id === topic.category_id)
               return cat ? <Tag color="blue">{cat.name}</Tag> : null
             })()}
             <span>{dayjs(topic.created_at).format('YYYY-MM-DD HH:mm')}</span>
-          </Space>
+          </div>
 
           {/* 标签 */}
           {topic.tags.length > 0 && (
             <Space>
               {topic.tags.map((tag) => (
-                <Tag key={tag} style={{ cursor: 'pointer' }} onClick={() => navigate(`/forum?tag=${encodeURIComponent(tag)}`)}>
-                  {tag}
+                <Tag key={tag} className="cursor-pointer" >
+                  <button onClick={() => navigate(`/forum?tag=${encodeURIComponent(tag)}`)}>{tag}</button>
                 </Tag>
               ))}
             </Space>
@@ -307,19 +298,15 @@ export default function TopicDetail() {
           {topic.resource_url && (
             <div>
               <Space>
-                <Typography.Text strong>资源链接：</Typography.Text>
-                <Button
-                  type="link"
-                  icon={<DownloadOutlined />}
-                  href={topic.resource_url}
-                  target="_blank"
-                >
-                  下载
-                </Button>
+                <Text strong>资源链接：</Text>
+                <a href={topic.resource_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="link">
+                    <Download className="h-4 w-4" />
+                    下载
+                  </Button>
+                </a>
                 {topic.resource_type && (
-                  <Tag color="blue">
-                    {resourceTypeMap[topic.resource_type] || topic.resource_type}
-                  </Tag>
+                  <Tag color="blue">{resourceTypeMap[topic.resource_type] || topic.resource_type}</Tag>
                 )}
               </Space>
             </div>
@@ -328,83 +315,67 @@ export default function TopicDetail() {
           <Divider />
 
           {/* 统计信息 */}
-          <Space split={<span>·</span>} wrap>
-            <Button
-              type="text"
-              icon={liked ? <LikeFilled /> : <LikeOutlined />}
-              onClick={handleLike}
-            >
+          <div className="flex items-center gap-2 flex-wrap text-sm">
+            <Button variant="text" onClick={handleLike}>
+              <ThumbsUp className={`h-4 w-4 ${liked ? 'fill-primary-600 text-primary-600' : ''}`} />
               赞 {likeCount}
             </Button>
-            <Button
-              type="text"
-              icon={favorited ? <StarFilled /> : <StarOutlined />}
-              onClick={handleFavorite}
-            >
+            <Button variant="text" onClick={handleFavorite}>
+              <Star className={`h-4 w-4 ${favorited ? 'fill-amber-400 text-amber-400' : ''}`} />
               收藏 {favoriteCount}
             </Button>
-            <Button type="text" icon={<MessageOutlined />}>
-              回复 {topic.reply_count}
-            </Button>
-            <Button type="text" icon={<EyeOutlined />}>
-              浏览 {topic.view_count}
-            </Button>
+            <Button variant="text"><MessageSquare className="h-4 w-4" />回复 {topic.reply_count}</Button>
+            <Button variant="text"><Eye className="h-4 w-4" />浏览 {topic.view_count}</Button>
             {canEdit && (
-              <Button
-                type="text"
-                icon={<EditOutlined />}
-                onClick={() => navigate(`/topic/create?type=${topic.type}&id=${topic.id}`)}
-              >
-                编辑
+              <Button variant="text" onClick={() => navigate(`/topic/create?type=${topic.type}&id=${topic.id}`)}>
+                <Pencil className="h-4 w-4" />编辑
               </Button>
             )}
             {canDelete && (
-              <Popconfirm
-                title="确定要删除这个帖子吗？"
-                description="删除后无法恢复"
-                onConfirm={handleDelete}
+              <ConfirmButton
+                title="确定要删除这个帖子吗？删除后无法恢复"
                 okText="确定删除"
-                cancelText="取消"
+                variant="danger"
+                onConfirm={handleDelete}
               >
-                <Button type="text" danger icon={<DeleteOutlined />} loading={deleting}>
-                  删除
-                </Button>
-              </Popconfirm>
+                <span className="inline-flex items-center text-red-500">
+                  <Trash2 className="h-4 w-4" />删除
+                </span>
+              </ConfirmButton>
             )}
             {topic.can_moderate && (
               <>
                 <Button
-                  type="text"
-                  icon={<PushpinOutlined />}
+                  variant="text"
                   onClick={handleTogglePin}
-                  style={topic.is_pinned ? { color: '#ff4d4f' } : undefined}
+                  className={topic.is_pinned ? 'text-red-500' : ''}
                 >
+                  <Pin className="h-4 w-4" />
                   {topic.is_pinned ? '取消置顶' : '置顶'}
                 </Button>
                 <Button
-                  type="text"
-                  icon={<TrophyOutlined />}
+                  variant="text"
                   onClick={handleToggleEssential}
-                  style={topic.is_essential ? { color: '#faad14' } : undefined}
+                  className={topic.is_essential ? 'text-amber-500' : ''}
                 >
+                  <Trophy className="h-4 w-4" />
                   {topic.is_essential ? '取消加精' : '加精'}
                 </Button>
               </>
             )}
             {topic.type === 'question' && !topic.is_solved && user?.id === topic.author.id && (
-              <Popconfirm
+              <ConfirmButton
                 title="确定标记为已解决吗？"
-                onConfirm={handleMarkSolved}
                 okText="确定"
-                cancelText="取消"
+                onConfirm={handleMarkSolved}
               >
-                <Button type="text" icon={<CheckCircleOutlined />} style={{ color: '#52c41a' }}>
-                  标记已解决
-                </Button>
-              </Popconfirm>
+                <span className="inline-flex items-center text-green-600">
+                  <CheckCircle className="h-4 w-4" />标记已解决
+                </span>
+              </ConfirmButton>
             )}
-          </Space>
-        </Space>
+          </div>
+        </div>
       </Card>
 
       {/* 回复列表 */}
@@ -415,48 +386,48 @@ export default function TopicDetail() {
           <EmptyState description="暂无回复，快来抢沙发吧" />
         ) : (
           <>
-            <List
-              itemLayout="vertical"
-              dataSource={posts}
-              renderItem={(post) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<Avatar src={post.author.avatar}>{post.author.username[0]}</Avatar>}
-                    title={
-                      <Space split={<span>·</span>}>
-                        <span>{post.author.username}</span>
+            <ul className="divide-y divide-gray-100">
+              {posts.map((post) => (
+                <li key={post.id} className="py-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar src={post.author.avatar}>{post.author.username[0]}</Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span className="text-gray-700">{post.author.username}</span>
+                        <span>·</span>
                         <span>#{post.floor} 楼</span>
+                        <span>·</span>
                         <span>{dayjs(post.created_at).format('YYYY-MM-DD HH:mm')}</span>
-                      </Space>
-                    }
-                    description={<MarkdownRender content={post.content} />}
-                  />
-                  <Space>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<LikeOutlined />}
-                      onClick={() => handlePostLike(post.id)}
-                    >
-                      {post.like_count}
-                    </Button>
-                    {topic.type === 'question' && !topic.is_solved && user?.id === topic.author.id && (
-                      <Button
-                        type="text"
-                        size="small"
-                        icon={<CheckCircleOutlined />}
-                        style={{ color: '#52c41a' }}
-                        onClick={() => handleAcceptAnswer(post.id)}
-                      >
-                        采纳
-                      </Button>
-                    )}
-                  </Space>
-                </List.Item>
-              )}
-            />
+                      </div>
+                      <div className="mt-2">
+                        <MarkdownRender content={post.content} />
+                      </div>
+                      <div className="mt-2">
+                        <Space>
+                          <Button variant="text" size="small" onClick={() => handlePostLike(post.id)}>
+                            <ThumbsUp className="h-3.5 w-3.5" />
+                            {post.like_count}
+                          </Button>
+                          {topic.type === 'question' && !topic.is_solved && user?.id === topic.author.id && (
+                            <Button
+                              variant="text"
+                              size="small"
+                              className="text-green-600"
+                              onClick={() => handleAcceptAnswer(post.id)}
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              采纳
+                            </Button>
+                          )}
+                        </Space>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
             {postsTotal > POST_PAGE_SIZE && (
-              <div style={{ textAlign: 'right', marginTop: 16 }}>
+              <div className="flex justify-end mt-4">
                 <Pagination
                   current={postsPage}
                   total={postsTotal}
@@ -473,14 +444,14 @@ export default function TopicDetail() {
       {/* 回复输入框 */}
       {!topic.is_locked ? (
         <Card title="发表回复">
-          <Input.TextArea
+          <Textarea
             rows={4}
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
             placeholder="请输入回复内容（支持 Markdown）"
           />
-          <div style={{ marginTop: 16, textAlign: 'right' }}>
-            <Button type="primary" onClick={handleSubmitReply} loading={submitting}>
+          <div className="mt-4 flex justify-end">
+            <Button variant="primary" onClick={handleSubmitReply} loading={submitting}>
               发表回复
             </Button>
           </div>
@@ -490,6 +461,6 @@ export default function TopicDetail() {
           <EmptyState description="该帖子已锁定，无法回复" />
         </Card>
       )}
-    </Space>
+    </div>
   )
 }

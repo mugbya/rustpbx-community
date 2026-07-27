@@ -1,27 +1,54 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Form, Input, Button, Divider, Typography, Alert, App as AntApp } from 'antd'
-import { MailOutlined, LockOutlined, UserOutlined, GithubOutlined } from '@ant-design/icons'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Mail, Lock, User } from 'lucide-react'
+import { Github } from '@/components/ui/icons/Github'
 import { GITHUB_AUTHORIZE_URL } from '@/utils/constants'
 import client from '@/api/client'
 import { useAuthStore } from '@/store/auth'
 import type { UserInfo } from '@/api/types'
+import { Input, InputPassword } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { Divider } from '@/components/ui/Divider'
+import { Alert } from '@/components/ui/Alert'
+import { FormItem } from '@/components/ui/FormItem'
+import { Title, Text } from '@/components/ui/Typography'
+import { message } from '@/components/ui/MessageProvider'
+
+const schema = z
+  .object({
+    username: z
+      .string()
+      .min(1, '请输入用户名')
+      .min(3, '用户名长度为 3-20 个字符')
+      .max(20, '用户名长度为 3-20 个字符'),
+    email: z.string().min(1, '请输入邮箱').email('请输入有效的邮箱地址'),
+    password: z.string().min(1, '请输入密码').min(8, '密码至少 8 个字符'),
+    confirm: z.string().min(1, '请确认密码'),
+  })
+  .refine((data) => data.password === data.confirm, {
+    message: '两次输入的密码不一致',
+    path: ['confirm'],
+  })
+type FormValues = z.infer<typeof schema>
 
 // 注册页
 export default function Register() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
-  const { message } = AntApp.useApp()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({ resolver: zodResolver(schema) })
+
   // 邮箱密码注册
-  const handleRegister = async (values: {
-    username: string
-    email: string
-    password: string
-    confirm: string
-  }) => {
+  const handleRegister = async (values: FormValues) => {
     setError('')
     setLoading(true)
     try {
@@ -60,103 +87,52 @@ export default function Register() {
 
   return (
     <div>
-      <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
+      <Title level={3} className="text-center mb-8">
         创建账号
-      </Typography.Title>
+      </Title>
 
-      <Form
-        name="register"
-        layout="vertical"
-        onFinish={handleRegister}
-        autoComplete="off"
-        onValuesChange={() => error && setError('')}
-      >
-        <Form.Item
-          name="username"
-          label="用户名"
-          rules={[
-            { required: true, message: '请输入用户名' },
-            { min: 3, max: 20, message: '用户名长度为 3-20 个字符' },
-          ]}
-        >
-          <Input prefix={<UserOutlined />} placeholder="请输入用户名" size="large" />
-        </Form.Item>
+      <form onSubmit={handleSubmit(handleRegister)} autoComplete="off" onChange={() => error && setError('')}>
+        <FormItem label="用户名" error={errors.username?.message} required>
+          <Input size="large" prefix={<User className="h-4 w-4" />} placeholder="请输入用户名" {...register('username')} />
+        </FormItem>
 
-        <Form.Item
-          name="email"
-          label="邮箱"
-          rules={[
-            { required: true, message: '请输入邮箱' },
-            { type: 'email', message: '请输入有效的邮箱地址' },
-          ]}
-        >
-          <Input prefix={<MailOutlined />} placeholder="请输入邮箱" size="large" />
-        </Form.Item>
+        <FormItem label="邮箱" error={errors.email?.message} required>
+          <Input size="large" prefix={<Mail className="h-4 w-4" />} placeholder="请输入邮箱" {...register('email')} />
+        </FormItem>
 
-        <Form.Item
-          name="password"
-          label="密码"
-          rules={[
-            { required: true, message: '请输入密码' },
-            { min: 8, message: '密码至少 8 个字符' },
-          ]}
-        >
-          <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" size="large" />
-        </Form.Item>
+        <FormItem label="密码" error={errors.password?.message} required>
+          <InputPassword size="large" prefix={<Lock className="h-4 w-4" />} placeholder="请输入密码" {...register('password')} />
+        </FormItem>
 
-        <Form.Item
-          name="confirm"
-          label="确认密码"
-          dependencies={['password']}
-          rules={[
-            { required: true, message: '请确认密码' },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('password') === value) {
-                  return Promise.resolve()
-                }
-                return Promise.reject(new Error('两次输入的密码不一致'))
-              },
-            }),
-          ]}
-        >
-          <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" size="large" />
-        </Form.Item>
+        <FormItem label="确认密码" error={errors.confirm?.message} required>
+          <InputPassword size="large" prefix={<Lock className="h-4 w-4" />} placeholder="请再次输入密码" {...register('confirm')} />
+        </FormItem>
 
         {error && (
-          <Alert
-            type="error"
-            message={error}
-            showIcon
-            closable
-            onClose={() => setError('')}
-            style={{ marginBottom: 16 }}
-          />
+          <Alert type="error" message={error} closable onClose={() => setError('')} className="mb-4" />
         )}
 
-        <Form.Item>
-          <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-            注册
-          </Button>
-        </Form.Item>
-      </Form>
+        <Button type="submit" variant="primary" block size="large" loading={loading}>
+          注册
+        </Button>
+      </form>
 
       <Divider plain>或</Divider>
 
       <Button
         block
         size="large"
-        icon={<GithubOutlined />}
         onClick={handleGitHubLogin}
-        style={{ background: '#24292e', color: '#fff', borderColor: '#24292e' }}
+        className="bg-[#24292e] text-white border-[#24292e] hover:bg-[#24292e]"
       >
+        <Github className="h-4 w-4" />
         使用 GitHub 注册
       </Button>
 
-      <div style={{ textAlign: 'center', marginTop: 24 }}>
-        <Typography.Text type="secondary">
-          已有账号？ <Link to="/login">立即登录</Link>
-        </Typography.Text>
+      <div className="text-center mt-6">
+        <Text type="secondary">
+          已有账号？ <Link to="/login" className="text-primary-600 hover:underline">立即登录</Link>
+        </Text>
       </div>
     </div>
   )

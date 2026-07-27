@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, List, Tag, Avatar, Space, Button, Spin, Pagination } from 'antd'
-import { PlusOutlined, MessageOutlined, EyeOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { Plus, MessageSquare, Eye, CheckCircle } from 'lucide-react'
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
+import { CategoryTagsBar } from '@/components/CategoryTagsBar'
 import { forumApi } from '@/api/forum'
 import type { Category, TopicListItem } from '@/api/types'
+import { Card } from '@/components/ui/Card'
+import { Tag } from '@/components/ui/Tag'
+import { Avatar } from '@/components/ui/Avatar'
+import { Button } from '@/components/ui/Button'
+import { Spin } from '@/components/ui/Spin'
+import { Pagination } from '@/components/ui/Pagination'
 
 const PAGE_SIZE = 20
 
@@ -61,71 +67,33 @@ export default function QAList() {
     setPage(1)
   }
 
-  // 点击标签：切换筛选
   const handleTagClick = (tagName: string | null) => {
     setSelectedTag(tagName)
     setPage(1)
   }
 
   return (
-    <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      {/* 板块筛选 */}
+    <div className="flex flex-col gap-4 w-full">
+      {/* 板块 + 标签筛选 */}
       <Card>
-        {loadingCats ? (
-          <Spin size="small" />
-        ) : (
-          <Space wrap size={[8, 8]}>
-            <Tag
-              style={{ cursor: 'pointer', padding: '4px 12px', fontSize: 14 }}
-              color={selectedCategory === null ? 'red' : 'default'}
-              onClick={() => handleCategoryClick(null)}
-            >
-              全部
-            </Tag>
-            {categories.map((cat) => (
-              <Tag
-                key={cat.id}
-                style={{ cursor: 'pointer', padding: '4px 12px', fontSize: 14 }}
-                color={selectedCategory === cat.id ? 'red' : 'default'}
-                onClick={() => handleCategoryClick(cat.id)}
-              >
-                {cat.name} ({cat.question_count ?? 0})
-              </Tag>
-            ))}
-          </Space>
-        )}
+        <CategoryTagsBar
+          loading={loadingCats}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryClick={handleCategoryClick}
+          countField="question_count"
+          tags={tags}
+          selectedTag={selectedTag}
+          onTagClick={handleTagClick}
+        />
       </Card>
-
-      {/* 标签筛选 */}
-      {tags.length > 0 && (
-        <Card>
-          <Space wrap size={[8, 8]}>
-            <Tag
-              style={{ cursor: 'pointer', padding: '2px 10px' }}
-              color={selectedTag === null ? 'orange' : 'default'}
-              onClick={() => handleTagClick(null)}
-            >
-              全部标签
-            </Tag>
-            {tags.map((t) => (
-              <Tag
-                key={t.id}
-                style={{ cursor: 'pointer', padding: '2px 10px' }}
-                color={selectedTag === t.name ? 'orange' : 'default'}
-                onClick={() => handleTagClick(t.name)}
-              >
-                {t.name} ({t.usage_count})
-              </Tag>
-            ))}
-          </Space>
-        </Card>
-      )}
 
       {/* 问答列表 */}
       <Card
         title={selectedCategory ? `${categories.find((c) => c.id === selectedCategory)?.name ?? ''}的问答` : '问答'}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/topic/create?type=question')}>
+          <Button variant="primary" onClick={() => navigate('/topic/create?type=question')}>
+            <Plus className="h-4 w-4" />
             提问
           </Button>
         }
@@ -140,41 +108,40 @@ export default function QAList() {
           />
         ) : (
           <>
-            <List
-              itemLayout="horizontal"
-              dataSource={items}
-              renderItem={(item) => (
-                <List.Item
-                  style={{ cursor: 'pointer' }}
+            <ul className="divide-y divide-gray-100">
+              {items.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex items-start gap-3 py-3 cursor-pointer"
                   onClick={() => navigate(`/forum/topic/${item.id}`)}
                 >
-                  <List.Item.Meta
-                    avatar={<Avatar src={item.author.avatar}>{item.author.username[0]}</Avatar>}
-                    title={
-                      <Space>
-                        {item.is_solved ? (
-                          <Tag icon={<CheckCircleOutlined />} color="success">
-                            已解决
-                          </Tag>
-                        ) : (
-                          <Tag color="processing">未解决</Tag>
-                        )}
-                        <span>{item.title}</span>
-                      </Space>
-                    }
-                    description={
-                      <Space split={<span>·</span>}>
-                        <span>{item.author.username}</span>
-                        <span><MessageOutlined /> {item.reply_count} 回答</span>
-                        <span><EyeOutlined /> {item.view_count} 浏览</span>
-                        <span>{dayjs(item.created_at).format('YYYY-MM-DD')}</span>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-            <div style={{ textAlign: 'right', marginTop: 16 }}>
+                  <Avatar src={item.author.avatar}>{item.author.username[0]}</Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {item.is_solved ? (
+                        <Tag color="green">
+                          <CheckCircle className="h-3 w-3 inline mr-0.5" />
+                          已解决
+                        </Tag>
+                      ) : (
+                        <Tag color="blue">未解决</Tag>
+                      )}
+                      <span className="text-gray-800">{item.title}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+                      <span>{item.author.username}</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-0.5"><MessageSquare className="h-3 w-3" /> {item.reply_count} 回答</span>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-0.5"><Eye className="h-3 w-3" /> {item.view_count} 浏览</span>
+                      <span>·</span>
+                      <span>{dayjs(item.created_at).format('YYYY-MM-DD')}</span>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end mt-4">
               <Pagination
                 current={page}
                 total={total}
@@ -186,6 +153,6 @@ export default function QAList() {
           </>
         )}
       </Card>
-    </Space>
+    </div>
   )
 }

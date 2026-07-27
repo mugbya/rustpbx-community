@@ -188,7 +188,7 @@ export default function AdminModerators() {
       <Card>
         {/* 第一步：选择分区 */}
         <div className="mb-4 flex gap-3 items-center">
-          <span>选择分区：</span>
+          <span className="whitespace-nowrap flex-shrink-0">选择分区：</span>
           <Select
             placeholder="请选择分区"
             className="w-40"
@@ -204,7 +204,7 @@ export default function AdminModerators() {
         {/* 第二步：选择板块 */}
         {selectedType && (
           <div className="mb-4 flex gap-3 items-center">
-            <span>选择板块：</span>
+            <span className="whitespace-nowrap flex-shrink-0">选择板块：</span>
             <Select
               placeholder="请选择板块"
               className="w-52"

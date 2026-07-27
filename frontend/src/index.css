@@ -9,6 +9,11 @@
   box-sizing: border-box;
 }
 
+html {
+  /* 固定基准字号 15px，使 Tailwind 的 rem 单位在本地与部署环境一致 */
+  font-size: 15px;
+}
+
 html,
 body,
 #root {

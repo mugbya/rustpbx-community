@@ -32,3 +32,9 @@ dist-ssr
 # 缓存
 .eslintcache
 .cache
+
+# TypeScript 增量编译缓存（tsc -b 产物，不应提交，否则污染 CI 构建）
+*.tsbuildinfo
+
+# Vite 构建中间产物
+vite.config.d.ts

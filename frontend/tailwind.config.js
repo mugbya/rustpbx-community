@@ -22,8 +22,8 @@ export default {
         DEFAULT: '6px',
       },
       fontSize: {
-        // 基准字号 15px
-        base: ['15px', '1.6'],
+        // 基准字号 18px
+        base: ['18px', '1.6'],
       },
       fontFamily: {
         sans: [

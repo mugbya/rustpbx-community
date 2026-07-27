@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { Outlet, Link } from 'react-router-dom'
 import { Layout, Typography, Space } from 'antd'
+import Loading from '@/components/Loading'
 import { DOCS_URL, GITHUB_REPO_URL } from '@/utils/constants'
 
 const { Content, Footer } = Layout
@@ -58,7 +60,9 @@ export default function AuthLayout() {
             boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
           }}
         >
-          <Outlet />
+          <Suspense fallback={<Loading />}>
+            <Outlet />
+          </Suspense>
         </div>
       </Content>
 

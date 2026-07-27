@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, Suspense, type ReactNode } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Layout, Menu, Dropdown, Avatar, Space, Typography, Button } from 'antd'
 import {
@@ -17,6 +17,7 @@ import {
   GithubOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '@/store/auth'
+import Loading from '@/components/Loading'
 import { NAV_MENU_ITEMS, DOCS_URL, GITHUB_REPO_URL } from '@/utils/constants'
 
 const { Header, Content, Sider } = Layout
@@ -218,7 +219,9 @@ export default function MainLayout() {
 
         {/* 内容区 */}
         <Content style={{ padding: 24, background: '#f5f5f5' }}>
-          <Outlet />
+          <Suspense fallback={<Loading />}>
+            <Outlet />
+          </Suspense>
         </Content>
       </Layout>
     </Layout>

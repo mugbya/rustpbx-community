@@ -125,7 +125,7 @@ export default function TopicDetail() {
   // 点赞
   const handleLike = async () => {
     try {
-      const { liked, like_count } = await interactionApi.toggleLike('thread', topicId)
+      const { liked, like_count } = await interactionApi.toggleLike('topic', topicId)
       setLiked(liked)
       setLikeCount(like_count)
     } catch {
@@ -136,7 +136,7 @@ export default function TopicDetail() {
   // 收藏
   const handleFavorite = async () => {
     try {
-      const { favorited, favorite_count } = await interactionApi.toggleFavorite('thread', topicId)
+      const { favorited, favorite_count } = await interactionApi.toggleFavorite('topic', topicId)
       setFavorited(favorited)
       setFavoriteCount(favorite_count)
     } catch {

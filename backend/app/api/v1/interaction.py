@@ -50,7 +50,13 @@ def toggle_like(
     current_user: User = Depends(get_current_active_user),
 ):
     """点赞/取消点赞"""
-    target_type = TargetType(request.target_type)
+    try:
+        target_type = TargetType(request.target_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"无效的目标类型: {request.target_type}",
+        )
 
     # 校验目标存在
     if target_type == TargetType.TOPIC:
@@ -102,7 +108,13 @@ def toggle_favorite(
     current_user: User = Depends(get_current_active_user),
 ):
     """收藏/取消收藏"""
-    target_type = TargetType(request.target_type)
+    try:
+        target_type = TargetType(request.target_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"无效的目标类型: {request.target_type}",
+        )
 
     # 仅支持帖子收藏
     if target_type != TargetType.TOPIC:

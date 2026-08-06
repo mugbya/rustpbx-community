@@ -38,10 +38,12 @@ export function Button({
   children,
   className,
   disabled,
+  type = 'button',
   ...rest
 }: ButtonProps) {
   return (
     <button
+      type={type}
       className={cn(
         'inline-flex items-center justify-center rounded font-normal cursor-pointer transition-colors',
         'focus:outline-none disabled:cursor-not-allowed disabled:opacity-60',

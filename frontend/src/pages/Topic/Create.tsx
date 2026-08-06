@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
+import { TagInput } from '@/components/ui/TagInput'
 import { Space } from '@/components/ui/Space'
 import { Divider } from '@/components/ui/Divider'
 import { Spin } from '@/components/ui/Spin'
@@ -286,12 +287,11 @@ export default function TopicCreate() {
         </FormItem>
 
         <FormItem label="标签">
-          <Select
-            mode="multiple"
+          <TagInput
             placeholder="输入标签后按回车，最多 5 个"
+            maxCount={5}
             value={watch('tags') ?? []}
-            onChange={(v) => setValue('tags', v as string[])}
-            options={[]}
+            onChange={(v) => setValue('tags', v)}
           />
         </FormItem>
 

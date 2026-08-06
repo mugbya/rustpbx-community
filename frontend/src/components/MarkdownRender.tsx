@@ -67,7 +67,12 @@ export default function MarkdownRender({ content, onHeadings }: MarkdownRenderPr
         components={{
           // 链接在新标签页打开
           a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer">
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:text-primary-700"
+            >
               {children}
             </a>
           ),

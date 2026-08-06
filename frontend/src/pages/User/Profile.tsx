@@ -20,6 +20,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { FormItem } from '@/components/ui/FormItem'
 import { Title, Text } from '@/components/ui/Typography'
 import { message } from '@/components/ui/MessageProvider'
+import { topicDetailPath } from '@/utils/constants'
 
 // Tab key 到 topic_type 的映射
 const tabToTopicType: Record<string, TopicType> = {
@@ -149,7 +150,7 @@ export default function Profile() {
             <li key={idx} className="py-3">
               <button
                 className="text-primary-600 hover:underline"
-                onClick={() => navigate(`/forum/topic/${item.topic_id}`)}
+                onClick={() => navigate(topicDetailPath(undefined, item.topic_id))}
               >
                 {item.topic_title}
               </button>
@@ -172,7 +173,7 @@ export default function Profile() {
           <li key={idx} className="py-3">
             <button
               className="text-primary-600 hover:underline"
-              onClick={() => navigate(`/forum/topic/${item.id}`)}
+              onClick={() => navigate(topicDetailPath(item.type, item.id))}
             >
               {item.title}
             </button>

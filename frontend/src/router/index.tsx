@@ -47,7 +47,12 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <LazyPage><Home /></LazyPage> },
       { path: 'forum', element: <LazyPage><ForumList /></LazyPage> },
+      // 帖子详情：四个分区共用同一组件，按分区前缀路由以便导航高亮正确匹配。
+      // /forum/topic/:id 同时兼容旧书签；详情页拿到 topic.type 后会自纠偏到正确前缀。
       { path: 'forum/topic/:id', element: <LazyPage><TopicDetail /></LazyPage> },
+      { path: 'qa/topic/:id', element: <LazyPage><TopicDetail /></LazyPage> },
+      { path: 'articles/topic/:id', element: <LazyPage><TopicDetail /></LazyPage> },
+      { path: 'resources/topic/:id', element: <LazyPage><TopicDetail /></LazyPage> },
       {
         // 受保护路由：创建帖子需要登录
         path: 'topic/create',

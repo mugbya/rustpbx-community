@@ -6,6 +6,7 @@ import EmptyState from '@/components/EmptyState'
 import { CategoryTagsBar } from '@/components/CategoryTagsBar'
 import { forumApi } from '@/api/forum'
 import type { Category, TopicListItem } from '@/api/types'
+import { topicDetailPath } from '@/utils/constants'
 import { Card } from '@/components/ui/Card'
 import { Tag } from '@/components/ui/Tag'
 import { Avatar } from '@/components/ui/Avatar'
@@ -113,7 +114,7 @@ export default function QAList() {
                 <li
                   key={item.id}
                   className="flex items-start gap-3 py-3 cursor-pointer"
-                  onClick={() => navigate(`/forum/topic/${item.id}`)}
+                  onClick={() => navigate(topicDetailPath(item.type, item.id))}
                 >
                   <Avatar src={item.author.avatar}>{item.author.username[0]}</Avatar>
                   <div className="flex-1 min-w-0">

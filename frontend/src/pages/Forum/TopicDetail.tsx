@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import {
   ArrowLeft,
   ThumbsUp,
@@ -34,6 +34,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Title, Text } from '@/components/ui/Typography'
 import { ConfirmButton } from '@/components/ui/ConfirmButton'
 import { message } from '@/components/ui/MessageProvider'
+import { TOPIC_TYPE_META, topicDetailPath } from '@/utils/constants'
 
 const POST_PAGE_SIZE = 20
 
@@ -48,6 +49,7 @@ const resourceTypeMap: Record<string, string> = {
 export default function TopicDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuthStore()
   const topicId = Number(id)
 
@@ -87,6 +89,17 @@ export default function TopicDetail() {
       })
       .finally(() => setLoading(false))
   }, [topicId])
+
+  // 自纠偏：拿到 topic.type 后，若当前 URL 的分区前缀与帖子实际分区不符，
+  // 则 replace 到正确分区前缀的详情路径（如 /forum/topic/1 -> /articles/topic/1）。
+  // 这样导航高亮才能命中正确分区；replace 不污染浏览历史，目标路径前缀已匹配不会循环。
+  useEffect(() => {
+    if (!topic) return
+    const expected = TOPIC_TYPE_META[topic.type]?.route
+    if (expected && !location.pathname.startsWith(expected)) {
+      navigate(topicDetailPath(topic.type, topicId), { replace: true })
+    }
+  }, [topic, topicId, location.pathname, navigate])
 
   // 获取回复列表
   const fetchPosts = useCallback(
@@ -171,7 +184,8 @@ export default function TopicDetail() {
     try {
       await forumApi.deleteTopic(topicId)
       message.success('删除成功')
-      navigate('/forum')
+      // 返回帖子所属分区的列表页
+      navigate(TOPIC_TYPE_META[topic?.type ?? 'discussion']?.route ?? '/forum')
     } catch {
       // 错误已由拦截器处理
     }
@@ -242,7 +256,7 @@ export default function TopicDetail() {
         <EmptyState
           description="帖子不存在或已被删除"
           actionText="返回论坛"
-          onAction={() => navigate('/forum')}
+          onAction={() => navigate(-1)}
         />
       </Card>
     )
@@ -276,6 +290,15 @@ export default function TopicDetail() {
             {topic.is_essential && <Tag color="gold">精华</Tag>}
             {topic.is_solved && <Tag color="green">已解决</Tag>}
             {topic.is_locked && <Tag><Lock className="h-3 w-3 inline mr-0.5" />已锁定</Tag>}
+            {(() => {
+              // 帖子所属分区（topic.type），点击跳转到对应分区列表
+              const meta = TOPIC_TYPE_META[topic.type]
+              return meta ? (
+                <Tag color={meta.color} className="cursor-pointer">
+                  <button onClick={() => navigate(meta.route)}>{meta.label}</button>
+                </Tag>
+              ) : null
+            })()}
             {topic.category_id && (() => {
               const cat = categories.find((c) => c.id === topic.category_id)
               return cat ? <Tag color="blue">{cat.name}</Tag> : null
@@ -288,7 +311,15 @@ export default function TopicDetail() {
             <Space>
               {topic.tags.map((tag) => (
                 <Tag key={tag} className="cursor-pointer" >
-                  <button onClick={() => navigate(`/forum?tag=${encodeURIComponent(tag)}`)}>{tag}</button>
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `${TOPIC_TYPE_META[topic.type]?.route ?? '/forum'}?tag=${encodeURIComponent(tag)}`,
+                      )
+                    }
+                  >
+                    {tag}
+                  </button>
                 </Tag>
               ))}
             </Space>

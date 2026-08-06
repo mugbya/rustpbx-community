@@ -6,6 +6,7 @@ import EmptyState from '@/components/EmptyState'
 import { CategoryTagsBar } from '@/components/CategoryTagsBar'
 import { forumApi } from '@/api/forum'
 import type { Category, TopicListItem } from '@/api/types'
+import { topicDetailPath } from '@/utils/constants'
 import { Card } from '@/components/ui/Card'
 import { Tag } from '@/components/ui/Tag'
 import { Avatar } from '@/components/ui/Avatar'
@@ -114,7 +115,7 @@ export default function ResourceList() {
                 <li
                   key={item.id}
                   className="flex items-start gap-3 py-4 cursor-pointer"
-                  onClick={() => navigate(`/forum/topic/${item.id}`)}
+                  onClick={() => navigate(topicDetailPath(item.type, item.id))}
                 >
                   <Avatar size={48} src={item.author.avatar}>{item.author.username[0]}</Avatar>
                   <div className="flex-1 min-w-0">
@@ -134,7 +135,7 @@ export default function ResourceList() {
                     variant="link"
                     onClick={(e) => {
                       e.stopPropagation()
-                      navigate(`/forum/topic/${item.id}`)
+                      navigate(topicDetailPath(item.type, item.id))
                     }}
                   >
                     <Download className="h-4 w-4" />

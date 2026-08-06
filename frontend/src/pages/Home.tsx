@@ -12,7 +12,8 @@ import {
 import dayjs from 'dayjs'
 import client from '@/api/client'
 import { forumApi } from '@/api/forum'
-import type { ForumStats, TopicListItem } from '@/api/types'
+import type { Category, ForumStats, TopicListItem } from '@/api/types'
+import { TOPIC_TYPE_META, topicDetailPath } from '@/utils/constants'
 import EmptyState from '@/components/EmptyState'
 import { Card } from '@/components/ui/Card'
 import { Tag } from '@/components/ui/Tag'
@@ -26,17 +27,20 @@ export default function Home() {
   const navigate = useNavigate()
   const [stats, setStats] = useState<ForumStats | null>(null)
   const [hotTopics, setHotTopics] = useState<TopicListItem[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
 
-  // 获取社区统计和热门话题
+  // 获取社区统计和热门话题（同时拉取板块列表用于显示帖子所属板块）
   useEffect(() => {
     Promise.all([
       client.get<unknown, ForumStats>('/v1/forum/stats'),
       forumApi.getTopics({ is_essential: true, sort: 'views', page: 1, page_size: 10 }),
+      forumApi.getCategories(),
     ])
-      .then(([statsData, topicsData]) => {
+      .then(([statsData, topicsData, catsData]) => {
         setStats(statsData)
         setHotTopics(topicsData?.items || [])
+        setCategories(catsData || [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -111,9 +115,26 @@ export default function Home() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {topic.is_pinned && <Tag color="red">置顶</Tag>}
                     {topic.is_essential && <Tag color="gold">精华</Tag>}
+                    {(() => {
+                      // 帖子所属分区（discussion/question/article/resource）
+                      const meta = TOPIC_TYPE_META[topic.type]
+                      return meta ? (
+                        <Tag
+                          color={meta.color}
+                          className="cursor-pointer"
+                        >
+                          <button onClick={() => navigate(meta.route)}>{meta.label}</button>
+                        </Tag>
+                      ) : null
+                    })()}
+                    {topic.category_id && (() => {
+                      // 帖子所属板块（Category）
+                      const cat = categories.find((c) => c.id === topic.category_id)
+                      return cat ? <Tag color="default">{cat.name}</Tag> : null
+                    })()}
                     <button
                       className="text-primary-600 hover:underline text-left"
-                      onClick={() => navigate(`/forum/topic/${topic.id}`)}
+                      onClick={() => navigate(topicDetailPath(topic.type, topic.id))}
                     >
                       {topic.title}
                     </button>

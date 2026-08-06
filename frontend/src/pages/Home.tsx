@@ -109,7 +109,11 @@ export default function Home() {
         ) : (
           <ul className="divide-y divide-gray-100">
             {hotTopics.map((topic) => (
-              <li key={topic.id} className="flex items-start gap-3 py-3">
+              <li
+                key={topic.id}
+                className="flex items-start gap-3 py-3 cursor-pointer"
+                onClick={() => navigate(topicDetailPath(topic.type, topic.id))}
+              >
                 <Avatar src={topic.author.avatar}>{topic.author.username[0]}</Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -123,7 +127,7 @@ export default function Home() {
                           color={meta.color}
                           className="cursor-pointer"
                         >
-                          <button onClick={() => navigate(meta.route)}>{meta.label}</button>
+                          <button onClick={(e) => { e.stopPropagation(); navigate(meta.route) }}>{meta.label}</button>
                         </Tag>
                       ) : null
                     })()}
@@ -132,12 +136,7 @@ export default function Home() {
                       const cat = categories.find((c) => c.id === topic.category_id)
                       return cat ? <Tag color="default">{cat.name}</Tag> : null
                     })()}
-                    <button
-                      className="text-primary-600 hover:underline text-left"
-                      onClick={() => navigate(topicDetailPath(topic.type, topic.id))}
-                    >
-                      {topic.title}
-                    </button>
+                    <span className="text-gray-800">{topic.title}</span>
                   </div>
                   <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
                     <span>{topic.author.username}</span>

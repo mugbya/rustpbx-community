@@ -17,6 +17,8 @@ import {
 import dayjs from 'dayjs'
 import MarkdownRender from '@/components/MarkdownRender'
 import EmptyState from '@/components/EmptyState'
+import { Toc } from '@/components/Toc'
+import type { TocHeading } from '@/utils/slug'
 import { forumApi, interactionApi, qaApi } from '@/api/forum'
 import { useAuthStore } from '@/store/auth'
 import type { TopicDetail, Post, Category } from '@/api/types'
@@ -62,6 +64,7 @@ export default function TopicDetail() {
   const [replyContent, setReplyContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
+  const [headings, setHeadings] = useState<TocHeading[]>([])
 
   // 获取板块列表（用于显示帖子所属板块）
   useEffect(() => {
@@ -251,7 +254,8 @@ export default function TopicDetail() {
   const canEdit = user && user.id === topic.author.id
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex gap-6 w-full">
+      <div className="flex flex-col gap-6 flex-1 min-w-0">
       <Button onClick={() => navigate(-1)}>
         <ArrowLeft className="h-4 w-4" />
         返回
@@ -292,7 +296,7 @@ export default function TopicDetail() {
 
           <Divider />
 
-          <MarkdownRender content={topic.content} />
+          <MarkdownRender content={topic.content} onHeadings={setHeadings} />
 
           {/* 资源链接 */}
           {topic.resource_url && (
@@ -460,6 +464,14 @@ export default function TopicDetail() {
         <Card>
           <EmptyState description="该帖子已锁定，无法回复" />
         </Card>
+      )}
+      </div>
+
+      {/* 右侧粘性目录（仅文章 + 大屏显示） */}
+      {topic.type === 'article' && (
+        <aside className="hidden lg:block w-56 shrink-0">
+          <Toc headings={headings} />
+        </aside>
       )}
     </div>
   )

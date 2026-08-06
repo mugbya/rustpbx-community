@@ -34,7 +34,7 @@ interface TopicBoardTagsProps extends TopicMetaBaseProps {
 /**
  * 帖子的板块与标签，放在帖子标题下一行。
  * 板块与标签级别不同，做视觉区分：
- * - 板块：带边框 + 底色（蓝色 Tag），前置一个「板块」小字标识
+ * - 板块：带边框 + 底色（灰色中性 Tag），前置一个「板块」小字标识
  * - 标签：浅灰文字样式，前缀「#」，更轻量
  */
 export function TopicBoardTags({ topic, categories, onTagClick }: TopicBoardTagsProps) {
@@ -51,7 +51,7 @@ export function TopicBoardTags({ topic, categories, onTagClick }: TopicBoardTags
       {categoryName && (
         <span className="inline-flex items-center gap-1 text-xs">
           <span className="text-gray-400">板块</span>
-          <Tag color="blue">{categoryName}</Tag>
+          <Tag color="default">{categoryName}</Tag>
         </span>
       )}
       {hasTags && (

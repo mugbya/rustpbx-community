@@ -18,6 +18,13 @@ export async function loadExtraLanguages(): Promise<void> {
   if (loaded) return
   loaded = true
   ;(globalThis as any).Prism = Prism
+  // prism-php 依赖 markup-templating（它在 before/after-tokenize 钩子中调用
+  // Prism.languages['markup-templating'].tokenizePlaceholders），
+  // 而 prism-react-renderer 未内置 markup-templating，必须先加载它，
+  // 否则高亮 PHP 代码时会抛 "Cannot read properties of undefined
+  // (reading 'tokenizePlaceholders')"。markup-templating 依赖 markup，
+  // markup 已被 prism-react-renderer 内置，故无需再单独引入。
+  await import('prismjs/components/prism-markup-templating')
   await Promise.all([
     import('prismjs/components/prism-java'),
     import('prismjs/components/prism-php'),

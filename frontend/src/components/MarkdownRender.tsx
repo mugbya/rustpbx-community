@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { getThumbUrl, getOriginalUrl } from '@/utils/image'
 import { slugify, type TocHeading } from '@/utils/slug'
+import CodeBlock from './markdown/CodeBlock'
 
 interface MarkdownRenderProps {
   // Markdown 内容
@@ -107,6 +108,21 @@ export default function MarkdownRender({ content, onHeadings }: MarkdownRenderPr
           h2: makeHeading(2),
           h3: makeHeading(3),
           h4: makeHeading(4),
+          // pre 透传：CodeBlock 自带 <pre>，避免外层再嵌套一层
+          pre: ({ children }) => <>{children}</>,
+          // code：区分行内代码与代码块
+          // react-markdown v9 不再传 inline，这里依据语言标记或换行判断
+          code: ({ className, children }) => {
+            const text = String(children ?? '')
+            const match = /language-(\w+)/.exec(className || '')
+            // 有 language-xxx 标记，或文本含换行（无语言围栏块）-> 代码块
+            const isBlock = !!match || text.includes('\n')
+            if (!isBlock) {
+              // 行内代码：沿用 .markdown-body code 的胶囊样式
+              return <code className={className}>{children}</code>
+            }
+            return <CodeBlock code={text.replace(/\n$/, '')} language={match?.[1] || ''} />
+          },
         }}
       >
         {content}

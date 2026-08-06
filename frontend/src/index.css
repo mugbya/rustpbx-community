@@ -90,6 +90,55 @@ a {
   color: inherit;
 }
 
+/* 代码块容器：圆角 + 裁剪头部圆角 */
+.markdown-body .code-block {
+  margin: 1em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+/* 代码块头部条：语言标签 + 复制按钮 */
+.markdown-body .code-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #2d2d2d;
+  color: #9da5b4;
+  font-size: 0.75em;
+  font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  text-transform: lowercase;
+}
+
+/* 复制按钮 */
+.markdown-body .code-block__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: #9da5b4;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.markdown-body .code-block__copy:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d4d4d4;
+}
+
+/* Highlight 渲染的 <pre>：去掉外层圆角/边距，背景色由主题内联样式接管 */
+.markdown-body .code-block pre {
+  margin: 0;
+  border-radius: 0;
+  padding: 16px;
+  font-size: 0.85em;
+}
+
 .markdown-body blockquote {
   border-left: 4px solid #ce422b;
   padding-left: 16px;

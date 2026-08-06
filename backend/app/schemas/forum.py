@@ -49,6 +49,7 @@ class TopicListItem(BaseModel):
     is_pinned: bool
     is_essential: bool
     is_solved: bool = False
+    tags: List[str] = []
     created_at: datetime
     last_reply_at: Optional[datetime] = None
 

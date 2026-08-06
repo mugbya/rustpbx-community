@@ -4,11 +4,11 @@ import { Plus, MessageSquare, Eye, ThumbsUp, Star } from 'lucide-react'
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { CategoryTagsBar } from '@/components/CategoryTagsBar'
+import { TopicStatusTags, TopicBoardTags } from '@/components/TopicMeta'
 import { forumApi } from '@/api/forum'
 import type { Category, TopicListItem } from '@/api/types'
 import { topicDetailPath } from '@/utils/constants'
 import { Card } from '@/components/ui/Card'
-import { Tag } from '@/components/ui/Tag'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Spin } from '@/components/ui/Spin'
@@ -123,8 +123,7 @@ export default function ForumList() {
                   <Avatar src={item.author.avatar}>{item.author.username[0]}</Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {item.is_pinned && <Tag color="red">置顶</Tag>}
-                      {item.is_essential && <Tag color="gold">精华</Tag>}
+                      <TopicStatusTags topic={item} />
                       <span className="text-gray-800">{item.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
@@ -139,6 +138,13 @@ export default function ForumList() {
                       <span className="inline-flex items-center gap-0.5"><Star className="h-3 w-3" /> {item.favorite_count}</span>
                       <span>·</span>
                       <span>{dayjs(item.created_at).format('MM-DD HH:mm')}</span>
+                    </div>
+                    <div className="mt-1">
+                      <TopicBoardTags
+                        topic={item}
+                        categories={categories}
+                        onTagClick={(tag) => { handleTagClick(tag); setPage(1) }}
+                      />
                     </div>
                   </div>
                 </li>

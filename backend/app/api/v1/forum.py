@@ -83,6 +83,22 @@ def _get_tags(db: Session, topic_id: int) -> list[str]:
     return [r[0] for r in rows]
 
 
+def _batch_tags(db: Session, topic_ids: set) -> dict[int, list[str]]:
+    """批量获取多个帖子的标签，避免 N+1 查询"""
+    if not topic_ids:
+        return {}
+    rows = (
+        db.query(TopicTag.topic_id, Tag.name)
+        .join(TopicTag, TopicTag.tag_id == Tag.id)
+        .filter(TopicTag.topic_id.in_(topic_ids))
+        .all()
+    )
+    tags_map: dict[int, list[str]] = {}
+    for topic_id, name in rows:
+        tags_map.setdefault(topic_id, []).append(name)
+    return tags_map
+
+
 def _sync_tags(db: Session, topic: Topic, tag_names: list[str]) -> None:
     """同步帖子标签"""
     # 删除旧关联
@@ -293,6 +309,8 @@ def list_topics(
 
     # 批量获取作者信息，避免 N+1 查询
     user_map = _batch_authors(db, {t.user_id for t in topics})
+    # 批量获取标签，避免 N+1 查询
+    tags_map = _batch_tags(db, {t.id for t in topics})
 
     items = []
     for t in topics:
@@ -310,6 +328,7 @@ def list_topics(
                 is_pinned=t.is_pinned,
                 is_essential=t.is_essential,
                 is_solved=t.is_solved,
+                tags=tags_map.get(t.id, []),
                 created_at=t.created_at,
                 last_reply_at=t.last_reply_at,
             ).model_dump()

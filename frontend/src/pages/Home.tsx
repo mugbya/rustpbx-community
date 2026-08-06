@@ -15,6 +15,7 @@ import { forumApi } from '@/api/forum'
 import type { Category, ForumStats, TopicListItem } from '@/api/types'
 import { TOPIC_TYPE_META, topicDetailPath } from '@/utils/constants'
 import EmptyState from '@/components/EmptyState'
+import { TopicStatusTags, TopicBoardTags } from '@/components/TopicMeta'
 import { Card } from '@/components/ui/Card'
 import { Tag } from '@/components/ui/Tag'
 import { Avatar } from '@/components/ui/Avatar'
@@ -117,8 +118,7 @@ export default function Home() {
                 <Avatar src={topic.author.avatar}>{topic.author.username[0]}</Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {topic.is_pinned && <Tag color="red">置顶</Tag>}
-                    {topic.is_essential && <Tag color="gold">精华</Tag>}
+                    <TopicStatusTags topic={topic} />
                     {(() => {
                       // 帖子所属分区（discussion/question/article/resource）
                       const meta = TOPIC_TYPE_META[topic.type]
@@ -130,11 +130,6 @@ export default function Home() {
                           <button onClick={(e) => { e.stopPropagation(); navigate(meta.route) }}>{meta.label}</button>
                         </Tag>
                       ) : null
-                    })()}
-                    {topic.category_id && (() => {
-                      // 帖子所属板块（Category）
-                      const cat = categories.find((c) => c.id === topic.category_id)
-                      return cat ? <Tag color="default">{cat.name}</Tag> : null
                     })()}
                     <span className="text-gray-800">{topic.title}</span>
                   </div>
@@ -148,6 +143,9 @@ export default function Home() {
                     </span>
                     <span>·</span>
                     <span>{dayjs(topic.created_at).format('YYYY-MM-DD')}</span>
+                  </div>
+                  <div className="mt-1">
+                    <TopicBoardTags topic={topic} categories={categories} />
                   </div>
                 </div>
               </li>

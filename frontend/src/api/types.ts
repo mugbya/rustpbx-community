@@ -69,6 +69,7 @@ export interface TopicListItem {
   is_pinned: boolean
   is_essential: boolean
   is_solved: boolean
+  tags: string[]
   created_at: string
   last_reply_at: string | null
 }

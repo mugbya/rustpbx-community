@@ -4,6 +4,7 @@ import { Plus, Eye, ThumbsUp, Calendar } from 'lucide-react'
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { CategoryTagsBar } from '@/components/CategoryTagsBar'
+import { TopicStatusTags, TopicBoardTags } from '@/components/TopicMeta'
 import { forumApi } from '@/api/forum'
 import type { Category, TopicListItem } from '@/api/types'
 import { topicDetailPath } from '@/utils/constants'
@@ -118,7 +119,10 @@ export default function ArticleList() {
                 >
                   <Avatar size={48} src={item.author.avatar}>{item.author.username[0]}</Avatar>
                   <div className="flex-1 min-w-0">
-                    <Title level={4} className="m-0">{item.title}</Title>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <TopicStatusTags topic={item} />
+                      <Title level={4} className="m-0">{item.title}</Title>
+                    </div>
                     <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
                       <span>{item.author.username}</span>
                       <span>·</span>
@@ -127,6 +131,13 @@ export default function ArticleList() {
                       <span className="inline-flex items-center gap-0.5"><Eye className="h-3 w-3" /> {item.view_count}</span>
                       <span>·</span>
                       <span className="inline-flex items-center gap-0.5"><ThumbsUp className="h-3 w-3" /> {item.like_count}</span>
+                    </div>
+                    <div className="mt-1">
+                      <TopicBoardTags
+                        topic={item}
+                        categories={categories}
+                        onTagClick={(tag) => { handleTagClick(tag); setPage(1) }}
+                      />
                     </div>
                   </div>
                 </li>

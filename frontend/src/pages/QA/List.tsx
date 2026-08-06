@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, MessageSquare, Eye, CheckCircle } from 'lucide-react'
+import { Plus, MessageSquare, Eye } from 'lucide-react'
 import dayjs from 'dayjs'
 import EmptyState from '@/components/EmptyState'
 import { CategoryTagsBar } from '@/components/CategoryTagsBar'
+import { TopicStatusTags, TopicBoardTags } from '@/components/TopicMeta'
 import { forumApi } from '@/api/forum'
 import type { Category, TopicListItem } from '@/api/types'
 import { topicDetailPath } from '@/utils/constants'
 import { Card } from '@/components/ui/Card'
-import { Tag } from '@/components/ui/Tag'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { Spin } from '@/components/ui/Spin'
@@ -119,14 +119,7 @@ export default function QAList() {
                   <Avatar src={item.author.avatar}>{item.author.username[0]}</Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {item.is_solved ? (
-                        <Tag color="green">
-                          <CheckCircle className="h-3 w-3 inline mr-0.5" />
-                          已解决
-                        </Tag>
-                      ) : (
-                        <Tag color="blue">未解决</Tag>
-                      )}
+                      <TopicStatusTags topic={item} />
                       <span className="text-gray-800">{item.title}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
@@ -137,6 +130,13 @@ export default function QAList() {
                       <span className="inline-flex items-center gap-0.5"><Eye className="h-3 w-3" /> {item.view_count} 浏览</span>
                       <span>·</span>
                       <span>{dayjs(item.created_at).format('YYYY-MM-DD')}</span>
+                    </div>
+                    <div className="mt-1">
+                      <TopicBoardTags
+                        topic={item}
+                        categories={categories}
+                        onTagClick={(tag) => { handleTagClick(tag); setPage(1) }}
+                      />
                     </div>
                   </div>
                 </li>
